@@ -1,0 +1,349 @@
+# Scoreboard main
+
+#heroes:
+
+# Common Widgets
+<IntInput@TextInput>:
+    multiline: False
+
+
+<DeleteWidget@BoxLayout>:
+    orientation: 'horizontal'
+    Button:
+        text: "del"
+
+
+<DragHandleWidget@BoxLayout>:
+    orientation: 'horizontal'
+    Label:
+        text: "|||"
+
+
+# Live Widgets
+<LivePlayerLeftWidget@BoxLayout>:
+    orientation: 'horizontal'
+    Label:
+        id: user
+        multiline: False
+        text: "User 1"
+    Spinner:
+        id: hero
+        values: ['a','b']
+    Label:
+        id: role
+        text: "Flex"
+
+
+<LivePlayerRightWidget@LivePlayerLeftWidget>:
+    # Realign components
+
+
+<LiveManager@BoxLayout>:
+    orientation: 'vertical'
+    TextInput:
+        id: title
+        placeholder: "Broadcast Title"
+        multiline: False
+    BoxLayout:
+        orientation: 'horizontal'
+        BoxLayout:
+            orientation: 'vertical'
+            Label:
+                text: "Hero Style"
+            Spinner:
+                id: herostyle
+                values: ('3D', 'Icon', 'Portrait')
+        BoxLayout:
+            orientation: 'vertical'
+            Label:
+                text: "Filter by Role"
+            Switch:
+                id: filterheroes
+        Button:
+            id: swapteams
+            text: "Swap Teams"
+    BoxLayout:
+        orientation: 'horizontal'
+        BoxLayout:
+            orientation: 'vertical'
+            Label:
+                text: "Team 1"
+            Spinner:
+                id: team1
+                values: ('x', 'y', 'z')
+            LivePlayerLeftWidget:
+                id: team1player1
+            LivePlayerLeftWidget:
+                id: team1player2
+            LivePlayerLeftWidget:
+                id: team1player3
+            LivePlayerLeftWidget:
+                id: team1player4
+            LivePlayerLeftWidget:
+                id: team1player5
+            LivePlayerLeftWidget:
+                id: team1player6
+        BoxLayout:
+            orientation: 'vertical'
+            Label:
+                text: "Team 2"
+            Spinner:
+                id: team2
+                values: ('x', 'y', 'z')
+            LivePlayerRightWidget:
+                id: team2player1
+            LivePlayerRightWidget:
+                id: team2player2
+            LivePlayerRightWidget:
+                id: team2player3
+            LivePlayerRightWidget:
+                id: team2player4
+            LivePlayerRightWidget:
+                id: team2player5
+            LivePlayerRightWidget:
+                id: team2player6
+
+
+# Map Widgets
+<MapWidget@BoxLayout>:
+    orientation: 'horizontal'
+    DragHandleWidget:
+        id: drag
+    Switch:
+        id: current
+        active: False
+    Spinner:
+        id: pool
+        values: ('Assualt', 'Hybrid', 'Escort', 'Control', 'Capture The Flag')
+    IntInput:
+        id: team1
+    Spinner:
+        id: map
+        value: ('a', 'b')
+    IntInput:
+        id: team2
+    Switch:
+        id: final
+        active: False
+    DeleteWidget:
+        id: delete
+
+
+<MapManager@BoxLayout>:
+    orientation: 'vertical'
+    BoxLayout:
+        orientation: 'horizontal'
+        Label:
+            text: "Drag"
+        Label:
+            text: "Current"
+        Label:
+            text: "Pool"
+        Label:
+            text: "Team 1"
+        Label:
+            text: "Map"
+        Label:
+            text: "Team 2"
+        Label:
+            text: "Final"
+        Label:
+            text: "Delete"
+    BoxLayout:
+        orientation: 'vertical'
+        id: mapset
+        MapWidget:
+        MapWidget:
+        MapWidget:
+        MapWidget:
+    BoxLayout:
+        orientation: 'horizontal'
+        BoxLayout:
+            orientation: 'vertical'
+            Label:
+                text: "Attacking Team:"
+            Spinner:
+                id: offense
+                values: ('Team1', 'Team2', 'None')
+        BoxLayout:
+            orientation: 'vertical'
+            Label:
+                text: "Image Style"
+            Spinner:
+                id: mapstyle
+                values: ('Icon', 'Thin')
+        Button:
+            id: addmap
+            text: "Add Map"
+
+
+# Team Widgets
+<TeamPlayerWidget@BoxLayout>:
+    orientation: 'horizontal'
+    DragHandleWidget:
+        id: drag
+    TextInput:
+        id: user
+        multiline: False
+    Spinner:
+        id: role
+        values: ('Damage', 'Tank', 'Support', 'Flex')
+    IntInput:
+        id: sr
+    DeleteWidget:
+        id: delete
+
+
+<TeamManager@BoxLayout>:
+    orientation: 'vertical'
+    BoxLayout:
+        orientation: 'horizontal'
+        Spinner:
+            id: teamselect
+            text: "Change Teams"
+        Button:
+            id: deleteteam
+            text: "Delete Team"
+        Button:
+            id: addteam
+            text: "Add New Team"
+    TextInput:
+        id: name
+        placeholder: "Team Name"
+        multiline: False
+    BoxLayout:
+        orientation: 'horizontal'
+        BoxLayout:
+            orientation: 'vertical'
+            Label:
+                text: "Logo: "
+            BoxLayout:
+                orientation: 'horizontal'
+                TextInput:
+                    id: logopath
+                Button:
+                    id: logopicker
+                    text: "..."
+                # FileChooserIconView:
+                #    id: team1logo
+        BoxLayout:
+            orientation: 'vertical'
+            Label:
+                text: "Colour (Hex):"
+            BoxLayout:
+                orientation: 'horizontal'
+                TextInput:
+                    id: colour
+                Button:
+                    id: colourpicker
+                    text: "Pick"
+                # ColorPicker:
+        BoxLayout:
+            orientation: 'vertical'
+            Label:
+                text: "SR (blank for auto)"
+            IntInput:
+                id: sr
+    BoxLayout:
+        orientation: 'horizontal'
+        Label:
+            text: "Drag"
+        Label:
+            text: "Username"
+        Label:
+            text: "Role"
+        Label:
+            text: "SR"
+        Label:
+            text: "Delete"
+    BoxLayout:
+        orientation: 'vertical'
+        id: playerset
+        TeamPlayerWidget:
+        TeamPlayerWidget:
+        TeamPlayerWidget:
+        Label:
+            text: "Substitutes"
+        TeamPlayerWidget:
+    Button:
+        id: addplayer
+        text: "Add Player"
+
+
+# Text Widgets
+<TextDataWidget@BoxLayout>:
+    orientation: 'horizontal'
+    DragHandleWidget:
+    Label:
+        id: label
+        text: "<Unknown>"
+    TextInput:
+        id: text
+        multiline: False
+
+
+<TextManager@BoxLayout>:
+    orientation: 'vertical'
+    BoxLayout:
+        orientation: 'horizontal'
+        Label:
+            text: "Drag"
+        Label:
+            text: "Filename"
+        Label:
+            text: "Value"
+    BoxLayout:
+        orientation: 'vertical'
+        TextDataWidget:
+        TextDataWidget:
+        TextDataWidget:
+        TextDataWidget:
+    Button:
+        id: addtextdata
+        text: "Add Text Field"
+
+
+TabbedPanel:
+    do_default_tab: False
+
+    TabbedPanelItem:
+        text: "Live"
+        LiveManager:
+
+    TabbedPanelItem:
+        text: "Maps"
+        MapManager:
+
+    TabbedPanelItem:
+        text: "Text"
+        TextManager:
+
+    TabbedPanelItem:
+        text: "Teams"
+        TeamManager:
+
+    TabbedPanelItem:
+        text: "testing"
+        BoxLayout:
+            orientation: 'vertical'
+            ActionBar:
+                ActionView:
+                    ActionPrevious:
+                        title: 'Title'
+                        with_previous: False
+                    ActionOverflow:
+
+                    ActionLabel:
+                        text: "Team Editor"
+                    ActionGroup:
+                        text: "Group"
+                        ActionButton:
+                            text: "a"
+                        ActionButton:
+                            text: "x"
+                        #values: ('a', 'x')
+                    ActionButton:
+                        text: "New Team +"
+
+            Label:
+                text: "Team list"

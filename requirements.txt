@@ -1,0 +1,5 @@
+kivy
+# Preinstalled dependencies
+# pygments
+kivy.deps.glew
+kivy.deps.sdl2
