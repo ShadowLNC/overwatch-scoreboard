@@ -8,7 +8,7 @@ import kivy.app
 # from kivy.uix.button import Label
 # from kivy.lang import Builder  # By default for Scoreboard(kivy.app.App)
 from kivy.uix.tabbedpanel import TabbedPanel
-from kivy.core.window import Window
+# from kivy.core.window import Window
 from kivy.uix.boxlayout import BoxLayout
 # from kivy.properties import ObjectProperty
 from kivy.logger import Logger
@@ -39,7 +39,7 @@ def copyfile(src, dest):
 
 
 # TODO some modal confirmation... or none at all?
-Window.bind(on_request_close=lambda *a, **kw: True)
+# Window.bind(on_request_close=lambda *a, **kw: True)
 
 
 class MapManager(BoxLayout):
