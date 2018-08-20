@@ -56,6 +56,7 @@ class MapManager(BoxLayout):
         # Logger.info("Mapwidget: " + str(args) + str(kwargs))
         super().__init__(*args, **kwargs)
         # IDs from kv-lang: mapset
+        self.current = None
 
         def finish(dt):
             # Fix: Wait for instantiation to finish before accessing ids.
@@ -92,7 +93,7 @@ class MapManager(BoxLayout):
         self.current = map
         for child in self.mapset.children:
             child.iscurrent = child is map
-        self.draw_livescore()
+        self.draw_live()
 
     def autocurrentmap(self):
         # The first non-final map will be the current one.
@@ -105,6 +106,50 @@ class MapManager(BoxLayout):
     def callback_mapstyle(self):
         for child in self.mapset.children:
             child.draw_map()
+        # draw_livemap is called from child.draw_map() unless current is None.
+        if self.current is None:
+            self.draw_livemap()
+
+    def draw_livepool(self):
+        target = "{}/livepool.png".format(OUTPUTROOT)
+        if self.current is not None:
+            self.current.draw_pool(target=target)
+        else:
+            with suppress(FileNotFoundError):
+                os.remove(target)
+            with suppress(FileNotFoundError):
+                os.remove(target[:-3] + "txt")
+
+    def draw_livemap(self):
+        target = "{}/livemap.png".format(OUTPUTROOT)
+        if self.current is not None:
+            self.current.draw_map(target=target)
+        else:
+            with suppress(FileNotFoundError):
+                os.remove(target)
+            with suppress(FileNotFoundError):
+                os.remove(target[:-3] + "txt")
+
+    def draw_livescore(self, team=None):
+        if team is None:
+            for team in (1, 2):
+                self.draw_livescore(team)  # Draw for all teams.
+
+        # Formatted target becomes a format string accepting team only.
+        target = "{}/livescore{{team}}.txt".format(OUTPUTROOT)
+        if self.current is not None:
+            self.current.draw_score(team=team, target=target)
+        else:
+            with suppress(FileNotFoundError):
+                os.remove(target.format(team=team))
+
+    def draw_liveresult(self):
+        target = "{}/liveresult.txt".format(OUTPUTROOT)
+        if self.current is not None:
+            self.current.draw_result(target=target)
+        else:
+            with suppress(FileNotFoundError):
+                os.remove(target)
 
     def draw_totalscore(self):
         teams = [0] * 3  # Each index represents that team (0 is draws)
@@ -117,24 +162,24 @@ class MapManager(BoxLayout):
             with open(target, 'w') as f:
                 f.write(text_fmt(wins))
 
-    def draw_livescore(self, team=None):
-        if team is None:
-            # Draw live scores for teams.
-            for team in (1, 2):
-                self.draw_livescore(team)
-            return
-        target = "{}/livescore{}.txt".format(OUTPUTROOT, team)
-        with open(target, 'w') as f:
-            score = 0  # Default if no live map.
-            if self.current is not None:
-                score = getattr(self.current, "score{}".format(team)).text
-            f.write(text_fmt(score))
+    def draw_live(self):
+        self.draw_livepool()
+        self.draw_livemap()
+        self.draw_livescore()  # team=None causes all to redraw.
+        self.draw_liveresult()
+        self.draw_totalscore()
 
     def draw(self):
         for child in self.mapset.children:
             child.draw()  # Full redraw of each child.
-        self.draw_totalscore()
-        self.draw_livescore()  # team=None causes all to redraw.
+        self.draw_live()
+
+        # I think we always want to do this if we're doing a full redraw.
+        for file in os.listdir(OUTPUTROOT):
+            # Grab the number of the map and compare to the max map number.
+            check = re.match(r"^map(\d+)\D.*", file)
+            if check and int(check[1]) > len(self.mapset.children):
+                os.remove("{}/{}".format(OUTPUTROOT, file))
 
     def __export__(self):
         # mapset.children is a stack, so we have to reverse for export.
@@ -257,23 +302,38 @@ class MapWidget(BoxLayout):
 
     def callback_delete(self):
         # TODO Some modal here.
-        # TODO cleanup.
         manager = self.manager  # Keep reference after deletion.
         self.parent.remove_widget(self)
         manager.autocurrentmap()
+        manager.draw()  # Clean up.
 
     def callback_pool(self, pool):
         self.map.values = MAPS[pool]
         self.map.text = ""
         self.draw_pool()
 
-    def draw_pool(self):
+    def draw_pool(self, target=None):
+        custom = target is not None
+        if not custom:
+            target = "{}/map{}pool.png".format(OUTPUTROOT, self.index1)
+
         pool = filename_fmt(self.pool.text)
         infile = "{}/game/modes/{}.png".format(IMAGEROOT, pool)
-        target = "{}/map{}pool.png".format(OUTPUTROOT, self.index1)
         copyfile(infile, target)
 
-    def draw_map(self):
+        # Replace png with txt and print out the name.
+        with open(target[:-3] + "txt", 'w') as f:
+            f.write(text_fmt(self.pool.text))
+
+        if not custom and self.iscurrent:
+            # This is a standard call and we should call the live updater.
+            self.manager.draw_livepool()
+
+    def draw_map(self, target=None):
+        custom = target is not None
+        if not custom:
+            target = "{}/map{}.png".format(OUTPUTROOT, self.index1)
+
         # Set the map image to the correct image.
         style = filename_fmt(self.manager.style)
         if self.isfinal:
@@ -287,26 +347,44 @@ class MapWidget(BoxLayout):
             map = "_pool " + filename_fmt(self.pool.text)
 
         infile = "{}/maps/{}/{}.png".format(IMAGEROOT, style, map)
-        target = "{}/map{}.png".format(OUTPUTROOT, self.index1)
+        target = target.format(OUTPUTROOT, self.index1)
         copyfile(infile, target, delete_if_missing=False)
 
-    def draw_score(self, team=None):
+        with open(target[:-3] + "txt", 'w') as f:
+            f.write(text_fmt(self.map.text))
+
+        if not custom and self.iscurrent:
+            # This is a standard call and we should call the live updater.
+            self.manager.draw_livemap()
+
+    def draw_score(self, team=None, target=None):
         if team is None:
             for team in (1, 2):
                 self.draw_score(team)  # Draw for all teams.
 
+        custom = target is not None
+        if not custom:
+            # Formatted target becomes a format string accepting team only.
+            target = "{}/map{}score{{team}}.txt".format(OUTPUTROOT,
+                                                        self.index1)
+
         # Team is 1 or 2, depending on which score value was changed.
-        target = "{}/map{}score{}.txt".format(OUTPUTROOT, self.index1, team)
+        target = target.format(team=team)
         with open(target, 'w') as f:
             text = getattr(self, "score{}".format(team))  # Input field.
             f.write(text_fmt(text.text))
-        if self.iscurrent:
+
+        # Standard call? Call the live updater.
+        if not custom and self.iscurrent:
             self.manager.draw_livescore(team)
         if self.isfinal:
             self.draw_result()
 
-    def draw_result(self):
-        target = "{}/map{}result.txt".format(OUTPUTROOT, self.index1)
+    def draw_result(self, target=None):
+        custom = target is not None
+        if not custom:
+            target = "{}/map{}result.txt".format(OUTPUTROOT, self.index1)
+
         with open(target, 'w') as f:
             # The file is now blank regardless, so if not final, write nothing.
             if self.isfinal:
@@ -315,6 +393,10 @@ class MapWidget(BoxLayout):
                     f.write(text_fmt("Team {}".format(win)))
                 else:
                     f.write(text_fmt("Draw!"))
+
+        if not custom and self.iscurrent:
+            # This is a standard call and we should call the live updater.
+            self.manager.draw_liveresult()
         self.manager.draw_totalscore()  # Changing the result changes totals.
 
     def draw(self):
