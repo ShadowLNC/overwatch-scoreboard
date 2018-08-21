@@ -66,9 +66,9 @@ class MapManager(BoxLayout):
                 self.addmap(child)
             # children is a stack, so current=0 is actually the last item.
             # The export function sets this accordingly.
-            _current = current
-            if _current is not None:
-                _current = self.mapset.children[current]
+            nonlocal current
+            if current is not None:
+                current = self.mapset.children[current]
             self.setcurrentmap(current)
             self.draw()
 
@@ -90,10 +90,13 @@ class MapManager(BoxLayout):
         # the MapWidget constructor. Instead, place code in that sub-function.
 
     def setcurrentmap(self, map):
+        if self.current is map:
+            return  # Skip superfluous redraws.
+
         self.current = map
         for child in self.mapset.children:
             child.iscurrent = child is map
-        self.draw_live()
+        self.draw_live()  # Must always be called; child won't trigger it.
 
     def autocurrentmap(self):
         # The first non-final map will be the current one.
@@ -208,8 +211,8 @@ class MapWidget(BoxLayout):
 
         # Logger.info("Mapwidget: " + str(args) + str(kwargs))
         super().__init__(*args, **kwargs)
-        self.suppress_callback_current = False
-        self.suppress_callback_final = True  # Suppress for init.
+        self.suppress_callback_current = False  # Property setter sets it True.
+        self.suppress_callback_final = False  # Is set only in finish().
 
         def finish(dt):
             # Fix: Wait for instantiation to finish before accessing ids.
@@ -219,7 +222,10 @@ class MapWidget(BoxLayout):
             self.map.text = map
             self.score1.text = score1
             self.score2.text = score2
-            self.final.active = final  # Do we need callback protection here?
+            if self.final.active != final:
+                # Suppress only if changing, otheriwse next toggle ignored.
+                self.suppress_callback_final = True
+                self.final.active = final
 
             # The following code ought to be in the MapManager.addmap method,
             # but cannot be as this finish() sub-function overrides set values.
@@ -278,8 +284,15 @@ class MapWidget(BoxLayout):
     # output. Both callback and draw functions may have KVlang triggers.
 
     def callback_current(self, on):
+        self.draw_map()  # Desat mode for non-current maps.
+
+        # But current and final, when enabled, disable the other. Setting a
+        # value in code still triggers callbacks, so this and final's callback
+        # would keep triggering each other recursively. The suppression value
+        # allows us to prevent that. Code above runs regardless, e.g. redraw
+        # should occur no matter whether we manually set the value or not.
         if self.suppress_callback_current:
-            # Updating the value also
+            # Remove suppression for next event, then stop the callback.
             self.suppress_callback_current = False
             return
 
@@ -288,17 +301,16 @@ class MapWidget(BoxLayout):
             self.final.active = False
 
     def callback_final(self, on):
-        # This is only relevant if the final switch equals the current switch.
-        # (They cannot be both on, and both off might set current on.)
-        # NEW: If we turn it on then redraw too (in case no current map).
+        self.draw_result()  # Needed to trigger updates for manager totals.
 
-        self.draw_result()
+        # Same callback pattern as per callback_current.
+        # Both final and current, when enabled, disable the other.
+        if self.suppress_callback_final:
+            # Remove suppression for next event, then stop callback.
+            self.suppress_callback_final = False
+            return
 
-        # TODO callback suppression for the init.
-        # No need to suppress this callback; it will only turn off final when
-        # current is on, so the if condition is already False.
-        if on or not self.current.active:
-            self.manager.autocurrentmap()
+        self.manager.autocurrentmap()  # Need to update current switch.
 
     def callback_delete(self):
         # TODO Some modal here.
@@ -309,8 +321,11 @@ class MapWidget(BoxLayout):
 
     def callback_pool(self, pool):
         self.map.values = MAPS[pool]
+        old = self.map.text
         self.map.text = ""
         self.draw_pool()
+        if not old:
+            self.draw_map()  # map.on_text won't fire (text didn't change).
 
     def draw_pool(self, target=None):
         custom = target is not None
@@ -336,8 +351,8 @@ class MapWidget(BoxLayout):
 
         # Set the map image to the correct image.
         style = filename_fmt(self.manager.style)
-        if self.isfinal:
-            style += " desat"
+        if not self.iscurrent and style == "strips":
+            style += " desat"  # Only possible for "strips" at this time.
 
         # Generate map name, or use the map pool, underscores must be allowed.
         map = filename_fmt(self.map.text)  # Map (image) name.
@@ -437,4 +452,8 @@ class Scoreboard(kivy.app.App):
 
 
 if __name__ == '__main__':
+    # Ensure we have the output folder, prevent crashes.
+    if not os.path.isdir(OUTPUTROOT):
+        os.makedirs(OUTPUTROOT)  # Make all "prerequisite" directories too.
+
     Scoreboard().run()
