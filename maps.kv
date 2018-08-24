@@ -1,0 +1,81 @@
+# Map Widgets
+<MapWidget>:
+    current: current
+    pool: pool
+    map: map
+    score1: score1
+    score2: score2
+    final: final
+
+    orientation: 'horizontal'
+    DragHandleWidget:
+    Switch:
+        id: current
+        on_active: root.callback_current(args[1])  # Send value only.
+    Spinner:
+        id: pool
+        on_text: root.callback_pool(args[1])  # Send value only.
+    Spinner:
+        id: map
+        on_text: root.draw_map()  # No value; multipurpose listener.
+    IntInput:
+        id: score1
+        on_text: root.draw_score(1)
+    IntInput:
+        id: score2
+        on_text: root.draw_score(2)
+    Switch:
+        id: final
+        on_active: root.callback_final(args[1])  # Send value only.
+    DeleteWidget:
+        on_press: root.callback_delete()
+
+
+<MapManager>:
+    attackers: attackers
+    mapset: mapset
+    mapstyle: mapstyle
+    orientation: 'vertical'
+    BoxLayout:
+        orientation: 'horizontal'
+        Label:
+            text: "Drag"
+        Label:
+            text: "Current"
+        Label:
+            text: "Pool"
+        Label:
+            text: "Map"
+        Label:
+            text: "Team 1"
+        Label:
+            text: "Team 2"
+        Label:
+            text: "Final"
+        Label:
+            text: "Delete"
+    BoxLayout:
+        orientation: 'vertical'
+        id: mapset
+        root: root
+        # MapWidget goes here.
+    BoxLayout:
+        orientation: 'horizontal'
+        BoxLayout:
+            orientation: 'vertical'
+            Label:
+                text: "Attacking Team:"
+            Spinner:
+                id: attackers
+                values: ('Team1', 'Team2', 'None')
+        BoxLayout:
+            orientation: 'vertical'
+            Label:
+                text: "Image Style"
+            Spinner:
+                id: mapstyle
+                values: ('Icons', 'Strips')
+                on_text: root.callback_mapstyle()
+        Button:
+            text: "Add Map"
+            on_press: root.addmap()  # No args.
