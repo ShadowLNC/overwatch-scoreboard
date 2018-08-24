@@ -1,7 +1,7 @@
 IMAGEROOT = "assets"
 OUTPUTROOT = "output"
 
-# For all heroes, use sorted(sum(HEROES.items(), [])).
+# For all heroes, use sorted(sum(HEROES.values(), [])).
 HEROES = {
     'damage': [
         'Bastion',

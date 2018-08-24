@@ -14,7 +14,7 @@ Builder.load_file("common.kv")
 
 def filename_fmt(val):
     val = unicodedata.normalize('NFD', val)  # Normalise, then strip others.
-    val = str(bytes(val, encoding='utf-8', errors='ignore'), encoding='ascii')
+    val = str(bytes(val, encoding='ascii', errors='ignore'), encoding='ascii')
     val = val.lower()
     return re.sub(r"[^\w ]", "", val)
 
