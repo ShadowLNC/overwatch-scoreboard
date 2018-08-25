@@ -1,5 +1,6 @@
 IMAGEROOT = "assets"
 OUTPUTROOT = "output"
+SAVEFILE = "save.json"
 
 # For all heroes, use sorted(sum(HEROES.values(), [])).
 HEROES = {

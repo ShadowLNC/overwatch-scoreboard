@@ -4,6 +4,7 @@ import re
 
 from kivy.clock import Clock
 from kivy.lang import Builder
+from kivy.logger import Logger
 from kivy.uix.boxlayout import BoxLayout
 
 from constants import MAPS, IMAGEROOT, OUTPUTROOT
@@ -14,12 +15,19 @@ from helpers import filename_fmt, text_fmt, copyfile
 Builder.load_file("maps.kv")
 
 
+# 888b     d888  .d8888b.  8888888b.
+# 8888b   d8888 d88P  Y88b 888   Y88b
+# 88888b.d88888 888    888 888    888
+# 888Y88888P888 888        888   d88P
+# 888 Y888P 888 888  88888 8888888P"
+# 888  Y8P  888 888    888 888 T88b
+# 888   "   888 Y88b  d88P 888  T88b
+# 888       888  "Y8888P88 888   T88b
+
 class MapManager(BoxLayout):
     def __init__(self, *args, attackers="", mapstyle="Strips",
                  mapset=[], current=None, **kwargs):
-        # Logger.info("Mapwidget: " + str(args) + str(kwargs))
         super().__init__(*args, **kwargs)
-        # IDs from kv-lang: mapset
         self.current = None
 
         def finish(dt):
@@ -33,6 +41,7 @@ class MapManager(BoxLayout):
             nonlocal current
             if current is not None:
                 current = self.mapset.children[current]
+            # Set the current map last to override autocurrentmap() calls.
             self.setcurrentmap(current)
             self.draw()
 
@@ -45,15 +54,19 @@ class MapManager(BoxLayout):
     def addmap(self, instance=None):
         # Add a map, either by dict args or a MapWidget already instantiated.
         if instance is None:
-            instance = MapWidget()
-        elif isinstance(instance, dict):
-            instance = MapWidget(**instance)  # Import values.
+            instance = {}  # Allow NoneType to be instantiated below.
+        if isinstance(instance, dict):
+            instance = MapWidget(**instance)  # Create from args.
         self.mapset.add_widget(instance)
 
-        # Anything done here will be overridden by the final() sub-function in
-        # the MapWidget constructor. Instead, place code in that sub-function.
+        # Not drawing map here - use final() sub-function after setting values.
+        self.autocurrentmap()
 
     def setcurrentmap(self, map):
+        Logger.debug("Setting map {} current (was {})".format(
+            map.index1 if map is not None else "empty",
+            self.current.index1 if self.current is not None else "empty"))
+
         if self.current is map:
             return  # Skip superfluous redraws.
 
@@ -163,6 +176,15 @@ class MapManager(BoxLayout):
         }
 
 
+# 888       888 8888888 8888888b.   .d8888b.  8888888888 88888888888
+# 888   o   888   888   888  "Y88b d88P  Y88b 888            888
+# 888  d8b  888   888   888    888 888    888 888            888
+# 888 d888b 888   888   888    888 888        8888888        888
+# 888d88888b888   888   888    888 888  88888 888            888
+# 88888P Y88888   888   888    888 888    888 888            888
+# 8888P   Y8888   888   888  .d88P Y88b  d88P 888            888
+# 888P     Y888 8888888 8888888P"   "Y8888P88 8888888888     888
+
 class MapWidget(BoxLayout):
     def __init__(self, *args, pool="", map="",
                  score1="0", score2="0", final=False, **kwargs):
@@ -173,50 +195,60 @@ class MapWidget(BoxLayout):
         # the widget won't be rendered (when the Clock event fires), and this
         # code will throw a myriad of exceptions.
 
-        # Logger.info("Mapwidget: " + str(args) + str(kwargs))
         super().__init__(*args, **kwargs)
-        self.suppress_callback_current = False  # Property setter sets it True.
-        self.suppress_callback_final = False  # Is set only in finish().
+        # Cached switch states. If the callback fires and it's a mismatch,
+        # then do callback stuff, otherwise suppress.
+        self.cache_current = False
+        self.cache_final = final
 
         def finish(dt):
             # Fix: Wait for instantiation to finish before accessing ids.
-            self.iscurrent = False  # May be set later.
+            # Set switches to their cached values, only triggers callbacks if
+            # actually changing, and doesn't override changes before this func.
+            self.current.active = self.cache_current
             self.pool.text = pool  # Triggers map selector update.
             self.pool.values = MAPS.keys()
             self.map.text = map
             self.score1.text = score1
             self.score2.text = score2
-            if self.final.active != final:
-                # Suppress only if changing, otheriwse next toggle ignored.
-                self.suppress_callback_final = True
-                self.final.active = final
+            self.final.active = self.cache_final
 
-            # The following code ought to be in the MapManager.addmap method,
-            # but cannot be as this finish() sub-function overrides set values.
-            self.draw()
-            self.manager.autocurrentmap()
+            self.draw()  # Draw images once all settings are correct.
+            # self.manager.autocurrentmap() can't be here, it would override
+            # the final setcurrentmap() call in MapManager.__init__.
 
         Clock.schedule_once(finish)  # https://stackoverflow.com/a/26918422/
 
     @property
     def iscurrent(self):
-        return self.current.active
+        # Returning cached value ensures up-to-date even before final().
+        return self.cache_current
 
     @iscurrent.setter
     def iscurrent(self, val):
-        if self.current.active != val:
-            # Ensure it needs changed, prevent unnecessary redraw.
-            self.suppress_callback_current = True
-            self.current.active = val
+        self.cache_current = val
+        self.current.active = val  # Only fires callback if changing.
 
     @property
     def isfinal(self):
-        return self.final.active
+        # Returning cached value ensures up-to-date even before final().
+        # e.g. autocurrentmap() could pull the False value and set current,
+        # deactivating the final switch erroneously.
+        # (Anecdotally, callbacks don't seem to fire until *after* final(), so
+        # this may be a non-issue, but it doesn't hurt to safeguard.)
+        return self.cache_final
+
+    @isfinal.setter
+    def isfinal(self, val):
+        self.cache_final = val
+        self.final.active = val  # Only fires callback if changing.
 
     @property
     def index1(self):
         # Return the 1-indexed position of this element in the parent.
         # Good for filenames, especially if being used by non-programmers.
+        if self.parent is None:
+            return None  # manager.current maintains reference and may access.
         siblings = self.parent.children
         return len(siblings) - siblings.index(self)
 
@@ -250,29 +282,28 @@ class MapWidget(BoxLayout):
     def callback_current(self, on):
         self.draw_map()  # Desat mode for non-current maps.
 
-        # But current and final, when enabled, disable the other. Setting a
-        # value in code still triggers callbacks, so this and final's callback
-        # would keep triggering each other recursively. The suppression value
-        # allows us to prevent that. Code above runs regardless, e.g. redraw
-        # should occur no matter whether we manually set the value or not.
-        if self.suppress_callback_current:
-            # Remove suppression for next event, then stop the callback.
-            self.suppress_callback_current = False
+        # current and final cannot both be enabled; if one is switched on, it
+        # must disable the other. Setting the switch via code still triggers
+        # callbacks (if changing), so the two switches would keep changing each
+        # other recursively. By storing the cached value, we can ignore known
+        # callbacks. Code above runs regardless, e.g. redraw should occur on
+        # any change, no matter whether we manually set the value or not.
+        if on == self.cache_current:
             return
+        self.cache_current = on  # Update the cached value to match current.
 
         self.manager.setcurrentmap(self if on else None)
-        if on and self.final.active:
-            self.final.active = False
+        if on and self.isfinal:
+            self.isfinal = False
 
     def callback_final(self, on):
         self.draw_result()  # Needed to trigger updates for manager totals.
 
         # Same callback pattern as per callback_current.
         # Both final and current, when enabled, disable the other.
-        if self.suppress_callback_final:
-            # Remove suppression for next event, then stop callback.
-            self.suppress_callback_final = False
+        if on == self.cache_final:
             return
+        self.cache_final = on  # Update the cached value to match final.
 
         self.manager.autocurrentmap()  # Need to update current switch.
 

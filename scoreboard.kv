@@ -225,6 +225,7 @@
 
 <View>:
     do_default_tab: False
+    tabmaps: tabmaps
 
     TabbedPanelItem:
         text: "Live"
@@ -232,7 +233,8 @@
 
     TabbedPanelItem:
         text: "Maps"
-        MapManager:
+        id: tabmaps
+        # Contains a MapManager, probably instantiated from save.
 
     TabbedPanelItem:
         text: "Text"
