@@ -97,99 +97,6 @@
                 id: team2player6
 
 
-# Team Widgets
-<TeamPlayerWidget@BoxLayout>:
-    orientation: 'horizontal'
-    DragHandleWidget:
-        id: drag
-    TextInput:
-        id: user
-        multiline: False
-    Spinner:
-        id: role
-        values: ('Damage', 'Tank', 'Support', 'Flex')
-    IntInput:
-        id: sr
-    DeleteWidget:
-        id: delete
-
-
-<TeamManager@BoxLayout>:
-    orientation: 'vertical'
-    BoxLayout:
-        orientation: 'horizontal'
-        Spinner:
-            id: teamselect
-            text: "Change Teams"
-        Button:
-            id: deleteteam
-            text: "Delete Team"
-        Button:
-            id: addteam
-            text: "Add New Team"
-    TextInput:
-        id: name
-        placeholder: "Team Name"
-        multiline: False
-    BoxLayout:
-        orientation: 'horizontal'
-        BoxLayout:
-            orientation: 'vertical'
-            Label:
-                text: "Logo: "
-            BoxLayout:
-                orientation: 'horizontal'
-                TextInput:
-                    id: logopath
-                Button:
-                    id: logopicker
-                    text: "..."
-                # FileChooserIconView:
-                #    id: team1logo
-        BoxLayout:
-            orientation: 'vertical'
-            Label:
-                text: "Colour (Hex):"
-            BoxLayout:
-                orientation: 'horizontal'
-                TextInput:
-                    id: colour
-                Button:
-                    id: colourpicker
-                    text: "Pick"
-                # ColorPicker:
-        BoxLayout:
-            orientation: 'vertical'
-            Label:
-                text: "SR (blank for auto)"
-            IntInput:
-                id: sr
-    BoxLayout:
-        orientation: 'horizontal'
-        Label:
-            text: "Drag"
-        Label:
-            text: "Username"
-        Label:
-            text: "Role"
-        Label:
-            text: "SR"
-        Label:
-            text: "Delete"
-    BoxLayout:
-        orientation: 'vertical'
-        id: playerset
-        TeamPlayerWidget:
-        TeamPlayerWidget:
-        TeamPlayerWidget:
-        Label:
-            text: "Substitutes"
-        TeamPlayerWidget:
-    Button:
-        id: addplayer
-        text: "Add Player"
-
-
 # Text Widgets
 <TextDataWidget@BoxLayout>:
     orientation: 'horizontal'
@@ -226,6 +133,7 @@
 <View>:
     do_default_tab: False
     tabmaps: tabmaps
+    tabteams: tabteams
 
     TabbedPanelItem:
         text: "Live"
@@ -242,7 +150,7 @@
 
     TabbedPanelItem:
         text: "Teams"
-        TeamManager:
+        id: tabteams
 
     TabbedPanelItem:
         text: "testing"

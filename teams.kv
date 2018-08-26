@@ -1,0 +1,132 @@
+# Team Widgets
+<TeamManager>:
+    teamset: teamset
+
+    orientation: 'vertical'
+
+    BoxLayout:
+        orientation: 'horizontal'
+        Label:
+            text: "Drag"
+        Label:
+            text: "Name"
+        Label:
+            text: "Logo"
+        Label:
+            text: "Colour (Hex):"
+        Label:
+            text: "Edit Roster"
+        Label:
+            text: "SR"
+        Label:
+            text: "Delete"
+
+    BoxLayout:
+        id: teamset
+        orientation: 'vertical'
+        root: root
+        # TeamWidget goes here.
+
+    BoxLayout:
+        orientation: 'horizontal'
+        Button:
+            on_press: root.addteam()
+            text: "Add New Team"
+
+
+
+<TeamWidget>:
+    name: name
+    logo: logo
+    # Pretty sure color is a reserved word based on syntax highlighting.
+    teamcolor: teamcolor
+    sr: sr
+
+    orientation: 'horizontal'
+
+    DragHandleWidget:
+    TextInput:
+        id: name
+        placeholder: "Team Name"
+        multiline: False
+    BoxLayout:
+        orientation: 'horizontal'
+        TextInput:
+            id: logo
+            multiline: False
+        Button:
+            text: "..."
+        # FileChooserIconView:
+        #    id: team1logo
+    BoxLayout:
+        orientation: 'horizontal'
+        TextInput:
+            id: teamcolor
+            multiline: False
+        Button:
+            text: "Pick"
+        # ColorPicker:
+    Button:
+        text: "Edit Roster..."
+        on_press: root.rosterview.open()
+    IntInput:
+        id: sr
+        hint_text: "(auto)"
+    DeleteWidget:
+        on_press: root.callback_delete()
+
+
+# The player manager for this team.
+<RosterWidget>:
+    playerset: playerset
+
+    size_hint: (0.8, 0.8)
+    title: "Team Roster"
+    title_align: 'center'
+    BoxLayout:
+        orientation: 'vertical'
+        BoxLayout:
+            orientation: 'horizontal'
+            Label:
+                text: "Drag"
+            Label:
+                text: "Username"
+            Label:
+                text: "Role"
+            Label:
+                text: "SR"
+            Label:
+                text: "Delete"
+        BoxLayout:
+            orientation: 'vertical'
+            id: playerset
+            # The label currently interferes as we don't have dragging setup.
+            # Label:
+            #    text: "Substitutes"
+        BoxLayout:
+            orientation: 'horizontal'
+            Button:
+                text: "Done"
+                on_press: root.dismiss()  # Close this modal.
+            Button:
+                text: "Add Player..."
+                on_press: root.addplayer()
+
+
+<PlayerWidget>:
+    user: user
+    role: role
+    sr: sr
+
+    orientation: 'horizontal'
+    DragHandleWidget:
+    TextInput:
+        id: user
+        multiline: False
+    Spinner:
+        id: role
+        values: ('Damage', 'Tank', 'Support', 'Flex')
+    IntInput:
+        id: sr
+    DeleteWidget:
+        on_press: root.callback_delete()

@@ -13,6 +13,7 @@ from constants import OUTPUTROOT, SAVEFILE
 # Load kv and classes below.
 import helpers
 from maps import MapManager
+from teams import TeamManager
 
 
 # TODO some modal confirmation... or none at all?
@@ -39,11 +40,14 @@ class View(TabbedPanel):
             with open(SAVEFILE) as f:
                 state = json.load(f)
 
+        # Order is important because of dependencies.
+        self.teammanager = TeamManager(**state.get('teammanager', {}))
         self.mapmanager = MapManager(**state.get('mapmanager', {}))
 
         def finish(dt):
             # Fix: Wait for KVlang load before accessing ids.
             self.tabmaps.add_widget(self.mapmanager)
+            self.tabteams.add_widget(self.teammanager)
 
         Clock.schedule_once(finish)
 
@@ -53,7 +57,8 @@ class View(TabbedPanel):
 
     def __export__(self):
         return {
-            'mapmanager': self.mapmanager.__export__()
+            'mapmanager': self.mapmanager.__export__(),
+            'teammanager': self.teammanager.__export__(),
         }
 
 
