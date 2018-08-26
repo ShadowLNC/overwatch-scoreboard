@@ -38,7 +38,11 @@ class View(TabbedPanel):
         if os.path.isfile(SAVEFILE):
             Logger.info("Scoreboard: Loading saved state...")
             with open(SAVEFILE) as f:
-                state = json.load(f)
+                try:
+                    state = json.load(f)
+                except json.decoder.JSONDecodeError:
+                    Logger.error(
+                        "Scoreboard: Failed to load JSON, defaulting...")
 
         # Order is important because of dependencies.
         self.teammanager = TeamManager(**state.get('teammanager', {}))

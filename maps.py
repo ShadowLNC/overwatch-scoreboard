@@ -25,7 +25,7 @@ Builder.load_file("maps.kv")
 # 888       888  "Y8888P88 888   T88b
 
 class MapManager(BoxLayout):
-    def __init__(self, *args, attackers="", mapstyle="Strips",
+    def __init__(self, *args, attackers="None", mapstyle="Strips",
                  mapset=[], current=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.current = None
@@ -63,7 +63,7 @@ class MapManager(BoxLayout):
         self.autocurrentmap()
 
     def setcurrentmap(self, map):
-        Logger.debug("Setting map {} current (was {})".format(
+        Logger.debug("Maps: Setting map {} current (was {})".format(
             map.index1 if map is not None else "empty",
             self.current.index1 if self.current is not None else "empty"))
 
