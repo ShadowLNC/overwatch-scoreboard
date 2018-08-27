@@ -1,19 +1,17 @@
 import json
 import os
 
-import kivy
 import kivy.app
-
 from kivy.clock import Clock
 from kivy.logger import Logger
 # from kivy.core.window import Window
 from kivy.uix.tabbedpanel import TabbedPanel
 
-from constants import OUTPUTROOT, SAVEFILE
+from .constants import OUTPUTROOT, SAVEFILE
 # Load kv and classes below.
-import helpers
-from maps import MapManager
-from teams import TeamManager
+from . import helpers
+from .components.maps import MapManager
+from .components.teams import TeamManager
 
 
 # TODO some modal confirmation... or none at all?

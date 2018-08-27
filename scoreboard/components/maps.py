@@ -7,12 +7,12 @@ from kivy.lang import Builder
 from kivy.logger import Logger
 from kivy.uix.boxlayout import BoxLayout
 
-from constants import MAPS, IMAGEROOT, OUTPUTROOT
+from ..constants import MAPS, IMAGEROOT, OUTPUTROOT
 # NOTE: helpers also loads a kv file for widgets used.
-from helpers import filename_fmt, text_fmt, copyfile
+from ..helpers import filename_fmt, text_fmt, copyfile
 
 
-Builder.load_file("maps.kv")
+Builder.load_file(os.path.dirname(os.path.abspath(__file__)) + "/maps.kv")
 
 
 # 888b     d888  .d8888b.  8888888b.

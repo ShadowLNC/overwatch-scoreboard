@@ -1,3 +1,5 @@
+import os
+
 from kivy.clock import Clock
 from kivy.lang import Builder
 from kivy.uix.boxlayout import BoxLayout
@@ -5,10 +7,10 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.popup import Popup
 
 # NOTE: helpers also loads a kv file for widgets used.
-import helpers
+from .. import helpers
 
 
-Builder.load_file("teams.kv")
+Builder.load_file(os.path.dirname(os.path.abspath(__file__)) + "/teams.kv")
 
 
 class TeamManager(BoxLayout):

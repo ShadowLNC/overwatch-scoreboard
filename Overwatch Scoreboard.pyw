@@ -18,4 +18,4 @@ if created:
 
 # Alternatively set stderr=subprocess.DEVNULL but this breaks Ctrl-C (why?)
 os.environ['KIVY_NO_CONSOLELOG'] = '1'
-subprocess.run([path + "pythonw", "scoreboard.py"])
+subprocess.run([path + "pythonw", "-m", "scoreboard.scoreboard"])

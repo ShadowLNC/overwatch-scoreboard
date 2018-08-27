@@ -5,11 +5,13 @@ import shutil
 import unicodedata
 
 from kivy.lang import Builder
-from constants import IMAGEROOT
+
+from .constants import IMAGEROOT
 
 
 # Load common widgets, this might be better in a common.py later.
-Builder.load_file("common.kv")
+Builder.load_file(os.path.dirname(os.path.abspath(__file__)) +
+                  "/components/common.kv")
 
 
 def filename_fmt(val):
