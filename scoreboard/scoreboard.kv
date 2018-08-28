@@ -97,42 +97,10 @@
                 id: team2player6
 
 
-# Text Widgets
-<TextDataWidget@BoxLayout>:
-    orientation: 'horizontal'
-    DragHandleWidget:
-    Label:
-        id: label
-        text: "<Unknown>"
-    TextInput:
-        id: text
-        multiline: False
-
-
-<TextManager@BoxLayout>:
-    orientation: 'vertical'
-    BoxLayout:
-        orientation: 'horizontal'
-        Label:
-            text: "Drag"
-        Label:
-            text: "Filename"
-        Label:
-            text: "Value"
-    BoxLayout:
-        orientation: 'vertical'
-        TextDataWidget:
-        TextDataWidget:
-        TextDataWidget:
-        TextDataWidget:
-    Button:
-        id: addtextdata
-        text: "Add Text Field"
-
-
 <View>:
     do_default_tab: False
     tabmaps: tabmaps
+    tabcustom: tabcustom
     tabteams: tabteams
 
     TabbedPanelItem:
@@ -146,7 +114,7 @@
 
     TabbedPanelItem:
         text: "Text"
-        TextManager:
+        id: tabcustom
 
     TabbedPanelItem:
         text: "Teams"

@@ -349,12 +349,12 @@ class MapWidget(BoxLayout):
         if not self.iscurrent and style == "strips":
             style += " desat"  # Only possible for "strips" at this time.
 
-        # Generate map name, or use the map pool, underscores must be allowed.
+        # Generate map name, or use the map pool.
         map = filename_fmt(self.map.text)  # Map (image) name.
         if not map:
             # If no map, use the pool image instead.
             # No map and no pool? No image (copyfile places "missing.png").
-            map = "_pool " + filename_fmt(self.pool.text)
+            map = filename_fmt("_pool " + self.pool.text)
 
         infile = "{}/maps/{}/{}.png".format(IMAGEROOT, style, map)
         target = target.format(OUTPUTROOT, self.index1)

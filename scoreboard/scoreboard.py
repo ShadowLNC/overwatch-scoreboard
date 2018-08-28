@@ -11,6 +11,7 @@ from .constants import OUTPUTROOT, SAVEFILE
 # Load kv and classes below.
 from . import helpers
 from .components.maps import MapManager
+from .components.custom import CustomDataManager
 from .components.teams import TeamManager
 
 
@@ -43,12 +44,15 @@ class View(TabbedPanel):
                         "Scoreboard: Failed to load JSON, defaulting...")
 
         # Order is important because of dependencies.
+        self.customdatamanager = CustomDataManager(
+            **state.get('customdatamanager', {}))
         self.teammanager = TeamManager(**state.get('teammanager', {}))
         self.mapmanager = MapManager(**state.get('mapmanager', {}))
 
         def finish(dt):
             # Fix: Wait for KVlang load before accessing ids.
             self.tabmaps.add_widget(self.mapmanager)
+            self.tabcustom.add_widget(self.customdatamanager)
             self.tabteams.add_widget(self.teammanager)
 
         Clock.schedule_once(finish)
@@ -61,6 +65,7 @@ class View(TabbedPanel):
         return {
             'mapmanager': self.mapmanager.__export__(),
             'teammanager': self.teammanager.__export__(),
+            'customdatamanager': self.customdatamanager.__export__(),
         }
 
 
@@ -70,10 +75,10 @@ class Scoreboard(kivy.app.App):
 
 
 if __name__ == '__main__':
-    # Ensure we have the output folder, prevent crashes.
-    if not os.path.isdir(OUTPUTROOT):
+    # Ensure we have the output folders, prevent crashes.
+    if not os.path.isdir(OUTPUTROOT + "/custom"):
         Logger.info("Scoreboard: Creating output folder...")
-        os.makedirs(OUTPUTROOT)  # Make all "prerequisite" directories too.
+        os.makedirs(OUTPUTROOT + "/custom")  # Make all "prerequisites" too.
 
     s = Scoreboard()
     s.run()

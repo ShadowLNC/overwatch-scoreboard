@@ -1,0 +1,71 @@
+# Text Widgets
+<CustomDataManager@BoxLayout>:
+    entries: entries
+    orientation: 'vertical'
+    BoxLayout:
+        orientation: 'horizontal'
+        Label:
+            text: "Drag"
+        Label:
+            text: "Filename"
+        Label:
+            text: "Value"
+        Label:
+            text: "Delete"
+    BoxLayout:
+        orientation: 'vertical'
+        id: entries
+        root: root
+    Button:
+        text: "Add Text Field"
+        on_press: root.add_new()
+
+
+<CustomTextWidget@BoxLayout>:
+    file: file
+    data: data
+
+    orientation: 'horizontal'
+    DragHandleWidget:
+    Label:
+        id: file
+    TextInput:
+        # text is a reserved word.
+        id: data
+        multiline: False
+        on_text: root.draw()
+    DeleteWidget:
+        on_press: root.callback_delete()
+
+
+<FilenameDialog>:
+    file:file
+
+    size_hint: (0.8, 0.8)
+    title: "Filename"
+    title_align: 'center'
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: "Choose a name for the file"
+        BoxLayout:
+            orientation: 'horizontal'
+            TextInput:
+                id: file
+                hint_text: "a-zA-Z0-9 ._- only."
+                multiline: False
+            Label:
+                size_hint_x: 0.2
+                text_size: self.size
+                halign: 'left'
+                valign: 'middle'
+                text: ".txt"
+
+        BoxLayout:
+            orientation: 'horizontal'
+            Button:
+                text: "Cancel"
+                on_press: root.dismiss()  # Close this modal.
+            Button:
+                text: "Add Entry"
+                on_press: root.confirm()

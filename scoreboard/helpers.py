@@ -18,7 +18,8 @@ def filename_fmt(val):
     val = unicodedata.normalize('NFD', val)  # Normalise, then strip others.
     val = str(bytes(val, encoding='ascii', errors='ignore'), encoding='ascii')
     val = val.lower()
-    return re.sub(r"[^\w ]", "", val)
+    # Allow letters (including underscores), spaces, dots and hyphens (dashes).
+    return re.sub(r"[^\w .-]", "", val, flags=re.ASCII)
 
 
 def text_fmt(val):
