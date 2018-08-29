@@ -67,7 +67,8 @@
                 text: "Attacking Team:"
             Spinner:
                 id: attackers
-                values: ('Team1', 'Team2', 'None')
+                values: ("", "Team 1", "Team 2")
+                on_text: root.draw_positions()
         BoxLayout:
             orientation: 'vertical'
             Label:

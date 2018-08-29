@@ -25,7 +25,7 @@ Builder.load_file(os.path.dirname(os.path.abspath(__file__)) + "/maps.kv")
 # 888       888  "Y8888P88 888   T88b
 
 class MapManager(BoxLayout):
-    def __init__(self, *args, attackers="None", mapstyle="Strips",
+    def __init__(self, *args, attackers="", mapstyle="Strips",
                  mapset=[], current=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.current = None
@@ -142,12 +142,30 @@ class MapManager(BoxLayout):
             with open(target, 'w') as f:
                 f.write(text_fmt(wins))
 
+    def draw_positions(self):
+        for team in (1, 2):
+            target = "{}/liveposition{}.png".format(OUTPUTROOT, team)
+
+            # We are allowing positions to be set even if no current map.
+            if self.attackers.text:
+                if self.attackers.text == "Team " + str(team):
+                    pos = "attack"
+                else:
+                    pos = "defense"
+
+                pos = filename_fmt(pos)
+                infile = "{}/game/positions/{}.png".format(IMAGEROOT, pos)
+                copyfile(infile, target)
+            else:
+                os.remove(target)  # Should we copy "none" in instead?
+
     def draw_live(self):
         self.draw_livepool()
         self.draw_livemap()
         self.draw_livescore()  # team=None causes all to redraw.
         self.draw_liveresult()
         self.draw_totalscore()
+        self.draw_positions()
 
     def draw(self):
         for child in self.mapset.children:
