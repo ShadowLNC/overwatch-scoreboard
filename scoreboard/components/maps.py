@@ -157,7 +157,8 @@ class MapManager(BoxLayout):
                 infile = "{}/game/positions/{}.png".format(IMAGEROOT, pos)
                 copyfile(infile, target)
             else:
-                os.remove(target)  # Should we copy "none" in instead?
+                with suppress(FileNotFoundError):
+                    os.remove(target)  # Should we copy "none" in instead?
 
     def draw_live(self):
         self.draw_livepool()

@@ -7,6 +7,7 @@ from kivy.uix.popup import Popup
 from kivy.uix.boxlayout import BoxLayout
 
 from ..constants import OUTPUTROOT
+# NOTE: helpers also loads a kv file for widgets used.
 from ..helpers import filename_fmt, text_fmt
 
 
