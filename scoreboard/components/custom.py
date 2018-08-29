@@ -14,12 +14,22 @@ Builder.load_file(os.path.dirname(os.path.abspath(__file__)) + "/custom.kv")
 
 
 class CustomDataManager(BoxLayout):
-    def __init__(self, *args, entries=[], **kwargs):
+    def __init__(self, *args, entries=None, **kwargs):
         super().__init__(*args, **kwargs)
+
+        if entries is None:
+            # This means this is first-run and has not been used before.
+            # Can't use blank list as that can be in saved state.
+            entries = ["caster1.txt", "caster2.txt",
+                       "analyst1.txt", "analyst2.txt", ]
+            # Create "instances" (kwargs for constructor) for each file.
+            # Leave the data undefined; it defaults anyway.
+            entries = [{'file': i} for i in entries]
 
         def finish(dt):
             for child in entries:
                 self.add_entry(child)
+            self.clean()  # No point drawing here as child.draw() bypasses.
 
         Clock.schedule_once(finish)
 
@@ -100,6 +110,7 @@ class CustomTextWidget(BoxLayout):
 
             self.file.text = file
             self.data.text = data  # Triggers draw by change (unless blank).
+            self.draw()  # Force draw anyway, in case file out of sync.
 
         Clock.schedule_once(finish)
 

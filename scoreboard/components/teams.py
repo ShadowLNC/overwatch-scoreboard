@@ -86,13 +86,16 @@ class RosterWidget(Popup):
 
 
 class PlayerWidget(BoxLayout):
-    def __init__(self, *args, username="", role="Flex", sr="", **kwargs):
+    def __init__(self, *args, username="", role="Flex", sr="",
+                 hero="", **kwargs):
         super().__init__(*args, **kwargs)
 
         def finish(dt):
             self.user.text = username
             self.role.text = role
             self.sr.text = sr
+            # Hero is used for the live tab only, but is part of player data.
+            self.hero = hero
 
         Clock.schedule_once(finish)
 
@@ -104,4 +107,5 @@ class PlayerWidget(BoxLayout):
             'username': self.user.text,
             'role': self.role.text,
             'sr': self.sr.text,
+            'hero': self.hero,
         }
