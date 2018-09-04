@@ -1,0 +1,76 @@
+# Live Widgets
+<LiveManager>:
+    title: title
+    herostyle: herostyle
+    herofilter: herofilter
+    teamset: teamset
+
+    orientation: 'vertical'
+    TextInput:
+        id: title
+        hint_text: "Broadcast Title"
+        multiline: False
+        on_text: root.callback_title(args[1])
+    BoxLayout:
+        orientation: 'horizontal'
+        BoxLayout:
+            orientation: 'vertical'
+            Label:
+                text: "Hero Style"
+            Spinner:
+                id: herostyle
+                values: ('3D', 'Icon', 'Portrait')
+        BoxLayout:
+            orientation: 'vertical'
+            Label:
+                text: "Filter by Role"
+            Switch:
+                id: herofilter
+        Button:
+            id: swapteams
+            text: "Swap Teams"
+    BoxLayout:
+        orientation: 'horizontal'
+        id: teamset
+        root: root
+        # LiveTeam objects here.
+
+
+<LiveTeam>:
+    title: title
+    teamselect: teamselect
+    players: players
+    orientation: 'vertical'
+    canvas.before:
+        # Set in Python now.
+        # Color:
+        #    rgba: (0x15/255, 0x84/255, 0xb4/255, 1)
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    Label:
+        id: title
+    Spinner:
+        id: teamselect
+        on_text: root.callback_teamselect(args[1])
+    BoxLayout:
+        orientation: 'vertical'
+        id: players
+        # LivePlayer objects here.
+
+
+<LivePlayer>:
+    orientation: 'horizontal'
+    Label:
+        id: user
+        text: "User 1"
+    Spinner:
+        id: hero
+        values: []
+    Label:
+        id: role
+        text: "Flex"
+
+
+<LivePlayerRightWidget@LivePlayer>:
+    # Realign components

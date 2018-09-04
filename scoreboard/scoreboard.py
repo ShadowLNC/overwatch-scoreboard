@@ -9,7 +9,7 @@ from kivy.uix.tabbedpanel import TabbedPanel
 
 from .constants import OUTPUTROOT, SAVEFILE
 # Load kv and classes below.
-from . import helpers
+from .components.live import LiveManager
 from .components.maps import MapManager
 from .components.custom import CustomDataManager
 from .components.teams import TeamManager
@@ -43,17 +43,24 @@ class View(TabbedPanel):
                     Logger.error(
                         "Scoreboard: Failed to load JSON, defaulting...")
 
-        # Order is important because of dependencies.
-        self.customdatamanager = CustomDataManager(
-            **state.get('customdatamanager', {}))
-        self.teammanager = TeamManager(**state.get('teammanager', {}))
-        self.mapmanager = MapManager(**state.get('mapmanager', {}))
-
         def finish(dt):
             # Fix: Wait for KVlang load before accessing ids.
+            # NOTE: Instantiation must occur here as well as adding each widget
+            # to their respective tabs, as managers interact in their scheduled
+            # finish() subfunctions (which run first, if instantiated outside).
+
+            # Order is important because of dependencies.
+            self.customdatamanager = CustomDataManager(
+                **state.get('customdatamanager', {}))
+            self.teammanager = TeamManager(**state.get('teammanager', {}))
+            self.mapmanager = MapManager(**state.get('mapmanager', {}))
+            self.livemanager = LiveManager(**state.get('livemanager', {}))
+
+            # Add each to their respective tab.
             self.tabmaps.add_widget(self.mapmanager)
             self.tabcustom.add_widget(self.customdatamanager)
             self.tabteams.add_widget(self.teammanager)
+            self.tablive.add_widget(self.livemanager)
 
         Clock.schedule_once(finish)
 
@@ -63,9 +70,10 @@ class View(TabbedPanel):
 
     def __export__(self):
         return {
+            'livemanager': self.livemanager.__export__(),
+            'customdatamanager': self.customdatamanager.__export__(),
             'mapmanager': self.mapmanager.__export__(),
             'teammanager': self.teammanager.__export__(),
-            'customdatamanager': self.customdatamanager.__export__(),
         }
 
 

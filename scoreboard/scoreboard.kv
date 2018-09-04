@@ -1,111 +1,14 @@
 # Scoreboard main
-
-# Live Widgets
-<LivePlayerLeftWidget@BoxLayout>:
-    orientation: 'horizontal'
-    Label:
-        id: user
-        multiline: False
-        text: "User 1"
-    Spinner:
-        id: hero
-        values: ['a','b']
-    Label:
-        id: role
-        text: "Flex"
-
-
-<LivePlayerRightWidget@LivePlayerLeftWidget>:
-    # Realign components
-
-
-<LiveManager@BoxLayout>:
-    orientation: 'vertical'
-    TextInput:
-        id: title
-        hint_text: "Broadcast Title"
-        multiline: False
-    BoxLayout:
-        orientation: 'horizontal'
-        BoxLayout:
-            orientation: 'vertical'
-            Label:
-                text: "Hero Style"
-            Spinner:
-                id: herostyle
-                values: ('3D', 'Icon', 'Portrait')
-        BoxLayout:
-            orientation: 'vertical'
-            Label:
-                text: "Filter by Role"
-            Switch:
-                id: filterheroes
-        Button:
-            id: swapteams
-            text: "Swap Teams"
-    BoxLayout:
-        orientation: 'horizontal'
-        BoxLayout:
-            orientation: 'vertical'
-            canvas:
-                Color:
-                    rgba: (0x15/255, 0x84/255, 0xb4/255, 1)
-                Rectangle:
-                    pos: self.pos
-                    size: self.size
-            Label:
-                text: "Team 1 (Blue)"
-            Spinner:
-                id: team1
-                values: ('x', 'y', 'z')
-            LivePlayerLeftWidget:
-                id: team1player1
-            LivePlayerLeftWidget:
-                id: team1player2
-            LivePlayerLeftWidget:
-                id: team1player3
-            LivePlayerLeftWidget:
-                id: team1player4
-            LivePlayerLeftWidget:
-                id: team1player5
-            LivePlayerLeftWidget:
-                id: team1player6
-        BoxLayout:
-            orientation: 'vertical'
-            canvas.before:
-                Color:
-                    rgba: (0xac/255, 0x10/255, 0x20/255, 1)
-                Rectangle:
-                    pos: self.pos
-                    size: self.size
-            Label:
-                text: "Team 2 (Red)"
-            Spinner:
-                id: team2
-                values: ('x', 'y', 'z')
-            LivePlayerRightWidget:
-                id: team2player1
-            LivePlayerRightWidget:
-                id: team2player2
-            LivePlayerRightWidget:
-                id: team2player3
-            LivePlayerRightWidget:
-                id: team2player4
-            LivePlayerRightWidget:
-                id: team2player5
-            LivePlayerRightWidget:
-                id: team2player6
-
-
 <View>:
     do_default_tab: False
+    tablive: tablive
     tabmaps: tabmaps
     tabcustom: tabcustom
     tabteams: tabteams
 
     TabbedPanelItem:
         text: "Live"
-        LiveManager:
+        id: tablive
 
     TabbedPanelItem:
         text: "Maps"
