@@ -1,4 +1,6 @@
+from contextlib import suppress
 import os
+import re
 
 from kivy.lang import Builder
 from kivy.uix.boxlayout import BoxLayout
@@ -6,7 +8,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.popup import Popup
 
 # NOTE: helpers also loads a kv file for widgets used.
-from ..helpers import LoadableWidget
+from ..helpers import LoadableWidget, copyfile
 
 
 Builder.load_file(os.path.dirname(os.path.abspath(__file__)) + "/teams.kv")
@@ -34,7 +36,7 @@ class TeamManager(LoadableWidget, BoxLayout):
 
 class TeamWidget(LoadableWidget, BoxLayout):
     @classmethod
-    def from_factory(cls, name="", logo="", teamcolor="#000000", sr="",
+    def from_factory(cls, name="", logo="", teamcolor="#ffffff", sr="",
                      roster=[], **kwargs):
         self = super().from_factory(**kwargs)
 
@@ -49,6 +51,41 @@ class TeamWidget(LoadableWidget, BoxLayout):
 
     def callback_delete(self):
         self.parent.remove_widget(self)
+
+    def draw_name(self, target):
+        with open(target, 'w') as f:
+            f.write(self.name.text)
+
+    def draw_logo(self, target):
+        # Will copy missing.png as necessary.
+        copyfile(self.logo.text, target)
+
+    def draw_color(self, target):
+        # We don't care if the colour is invalid, not our problem.
+        with open(target, 'w') as f:
+            f.write("<!DOCTYPE html>"
+                    "<html>"
+                    "<head>"
+                    "    <meta http-equiv=\"refresh\" content=\"1\">"
+                    "    <title>Solid Colour</title>"
+                    "</head>"
+                    "<body style=\"width:100%; height:100%; "
+                    "background-color:{};\">"
+                    "</body>"
+                    "</html>".format(self.teamcolor.text))
+
+    def draw_sr(self, target):
+        sr = self.sr.text
+        if not sr:
+            sr = 0
+            for child in self.rosterview.playerset.children:
+                # Any invalid values are assumed to be 0 (empty also errors).
+                with suppress(ValueError):
+                    sr += int(child.sr.text)
+            # Integer average; max(1, len) prevents zero division.
+            sr //= max(1, len(self.rosterview.playerset.children))
+        with open(target, 'w') as f:
+            f.write(str(sr))  # Gotta write a string.
 
     def __export__(self):
         return {

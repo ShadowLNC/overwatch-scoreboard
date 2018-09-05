@@ -51,4 +51,7 @@ def copyfile(src, dest, delete_if_missing=True):
             with suppress(FileNotFoundError):
                 os.remove(dest)
         else:
-            shutil.copyfile(IMAGEROOT + "/missing.png", dest)
+            try:
+                shutil.copyfile(IMAGEROOT + "/missing.png", dest)
+            except FileNotFoundError:
+                open(dest, 'wb').close()  # Touch the target for empty file.

@@ -1,3 +1,4 @@
+from contextlib import suppress
 import os
 
 from kivy.graphics import Color
@@ -41,7 +42,7 @@ class LiveManager(LoadableWidget, BoxLayout):
         with open(OUTPUTROOT + "/livetitle.txt", 'w') as f:
             f.write(value)
 
-    def callback_teamlist(self, draw=True):
+    def callback_teamlist(self):
         # Disallow empty team names. If duplicate names, last takes priority.
         teamlist = {"": None}
         for team in reversed(self.manager.teammanager.teamset.children):
@@ -52,6 +53,16 @@ class LiveManager(LoadableWidget, BoxLayout):
         self.teamlist = teamlist
         for child in self.teamset.children:
             child.draw_teamselect()
+
+    def callback_swap(self):
+        teams = self.teamset.children
+        # `a, b = b, a` swaps values
+        teams[0].team, teams[1].team = teams[1].team, teams[0].team
+
+        # Perhaps there's a better way to trigger draw_teamselect on each.
+        for child in self.teamset.children:
+            child.draw_teamselect()
+            child.draw()
 
     def __export__(self):
         return {
@@ -76,6 +87,7 @@ class LiveTeam(LoadableWidget, BoxLayout):
         # Setup the current team (name/object), default to None if missing.
         self.team = self.manager.teamlist.get(teamname, None)
         self.draw_teamselect()  # Draw now that we have set self.team.
+        self.draw()
 
         for i in range(6):
             pass  # TODO Add the LivePlayer widgets.
@@ -92,8 +104,8 @@ class LiveTeam(LoadableWidget, BoxLayout):
         team = self.manager.teamlist[value]
         if team != self.team:
             # Don't redraw unless necessary (could be just name change).
-            self.draw_players()
             self.team = team
+            self.draw()
 
     def draw_teamselect(self):
         # Sync the team selector against the team list.
@@ -109,10 +121,48 @@ class LiveTeam(LoadableWidget, BoxLayout):
             # Team no longer exists (or hidden by same name), set empty/None.
             self.teamselect.text = ""
 
+    def draw_name(self):
+        target = "{}/team{}.txt".format(OUTPUTROOT, self.index1)
+        if self.team is not None:
+            self.team.draw_name(target)
+        else:
+            with suppress(FileNotFoundError):
+                os.remove(target)
+
+    def draw_color(self):
+        target = "{}/team{}color.html".format(OUTPUTROOT, self.index1)
+        if self.team is not None:
+            self.team.draw_color(target)
+        else:
+            with suppress(FileNotFoundError):
+                os.remove(target)
+
+    def draw_logo(self):
+        target = "{}/team{}logo.png".format(OUTPUTROOT, self.index1)
+        if self.team is not None:
+            self.team.draw_logo(target)
+        else:
+            with suppress(FileNotFoundError):
+                os.remove(target)
+
+    def draw_sr(self):
+        target = "{}/team{}sr.txt".format(OUTPUTROOT, self.index1)
+        if self.team is not None:
+            self.team.draw_sr(target)
+        else:
+            with suppress(FileNotFoundError):
+                os.remove(target)
+
     def draw_players(self):
         # We could delete and regenerate the hero selectors, this means there
         # would not be "inert" selectors for players that don't exist.
         pass
+
+    def draw(self):
+        self.draw_name()
+        self.draw_color()
+        self.draw_logo()
+        self.draw_sr()
 
     def __export__(self):
         return {
