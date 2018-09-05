@@ -1,22 +1,23 @@
 import os
 import re
 
-from kivy.clock import Clock
 from kivy.lang import Builder
+from kivy.logger import Logger
 from kivy.uix.popup import Popup
 from kivy.uix.boxlayout import BoxLayout
 
 from ..constants import OUTPUTROOT
 # NOTE: helpers also loads a kv file for widgets used.
-from ..helpers import filename_fmt, text_fmt
+from ..helpers import LoadableWidget, filename_fmt, text_fmt
 
 
 Builder.load_file(os.path.dirname(os.path.abspath(__file__)) + "/custom.kv")
 
 
-class CustomDataManager(BoxLayout):
-    def __init__(self, *args, entries=None, **kwargs):
-        super().__init__(*args, **kwargs)
+class CustomDataManager(LoadableWidget, BoxLayout):
+    @classmethod
+    def from_factory(cls, entries=None, **kwargs):
+        self = super().from_factory(**kwargs)
 
         if entries is None:
             # This means this is first-run and has not been used before.
@@ -27,24 +28,21 @@ class CustomDataManager(BoxLayout):
             # Leave the data undefined; it defaults anyway.
             entries = [{'file': i} for i in entries]
 
-        def finish(dt):
-            for child in entries:
-                self.add_entry(child)
-            self.clean()  # No point drawing here as child.draw() bypasses.
+        for child in entries:
+            self.add_entry(**child)
+        self.clean()  # No point drawing here as child.draw() bypasses.
 
-        Clock.schedule_once(finish)
+        return self
 
     @property
     def files(self):
         # Return list as we use "if a in files".
         return [child.file.text for child in self.entries.children]
 
-    def add_entry(self, instance=None):
-        if instance is None:
-            instance = {}  # Allow blank instantiation. (Not possible here.)
-        if isinstance(instance, dict):
-            instance = CustomTextWidget(**instance)  # From args.
-        self.entries.add_widget(instance)
+    def add_entry(self, **data):
+        # Instantiate from args - widget inherits LoadableWidget self-adding.
+        CustomTextWidget.from_factory(**data,
+                                      parent=self.entries, manager=self)
 
     def add_new(self):
         FilenameDialog(self).open()  # Popup asking for filename.
@@ -63,61 +61,58 @@ class CustomDataManager(BoxLayout):
         }
 
 
-class CustomTextWidget(BoxLayout):
-    def __init__(self, *args, file, data="", **kwargs):
+class CustomTextWidget(LoadableWidget, BoxLayout):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         # Workaround for Kivy #3588 TextInput on_text fired on init.
         self.instantiation_complete = False
 
+    @classmethod
+    def from_factory(cls, file="", data="", **kwargs):
+        self = super().from_factory(**kwargs)
+
         file = filename_fmt(file)
         if not file:
             # I know I'm bad at naming files, but really? No name at all?
-            raise ValueError("Invalid filename.")
+            Logger.warning("Custom: Empty filename, defaulting.")
+            file = "untitled.txt"  # Default
 
-        def finish(dt):
-            # WARNING: It is expected that this widget will immediately be
-            # added to a CustomDataManager after instantiation. This scheduled
-            # function to complete instantiation relies on that assumption.
-            nonlocal file
+        # Workaround for Kivy #3588 TextInput on_text fired on init.
+        self.instantiation_complete = True
 
-            # Workaround for Kivy #3588 TextInput on_text fired on init.
-            self.instantiation_complete = True
+        # Check for a duplicate filename and rename this one accordingly.
+        # Basically Untitled.txt => Untitled_2.txt => Untitled_3.txt and so on.
+        files = self.manager.files
+        if file in files:
+            # The filename is known, this is a problem.
+            file = file.rsplit(".", 1)
 
-            files = self.manager.files
-            if file in files:
-                # The filename is known, this is a problem.
-                file = file.rsplit(".", 1)
+            # Check if it has a number on the end or not, and prep new number.
+            end = re.search(r"(?<=_)\d+$", file[0])
+            if end:
+                end = end.group()
+                file[0] = file[0][:-len(end)]
+                end = int(end)
+            else:
+                if not file[0].endswith("_"):
+                    file[0] += "_"
+                end = 1  # Increments to 2 immediately.
 
-                # Check if it has a number on the end or not, and prep it.
-                end = re.search(r"(?<=_)\d+$", file[0])
-                if end:
-                    end = end.group()
-                    file[0] = file[0][:-len(end)]
-                    end = int(end)
-                else:
-                    if not file[0].endswith("_"):
-                        file[0] += "_"
-                    end = 1  # Increments to 2 immediately.
+            while True:
+                end += 1  # Increment the number until we get a free file.
+                new = [file[0] + str(end)] + file[1:]
+                new = ".".join(new)
+                if new not in files:
+                    break
 
-                while True:
-                    end += 1  # Increment the number until we get a free file.
-                    new = [file[0] + str(end)] + file[1:]
-                    new = ".".join(new)
-                    if new not in files:
-                        break
+            file = new
 
-                file = new
+        self.file.text = file
+        self.data.text = data  # Triggers draw by change (unless blank).
+        self.draw()  # Force draw anyway, in case file out of sync.
 
-            self.file.text = file
-            self.data.text = data  # Triggers draw by change (unless blank).
-            self.draw()  # Force draw anyway, in case file out of sync.
-
-        Clock.schedule_once(finish)
-
-    @property
-    def manager(self):
-        return self.parent.root
+        return self
 
     def callback_delete(self):
         manager = self.manager  # Retain reference.
@@ -144,7 +139,8 @@ class FilenameDialog(Popup):
         self.manager = manager
 
     def confirm(self):
-        file = filename_fmt(self.file.text) or "untitled"  # Fallback if empty.
-        file += ".txt"  # Extension.
-        self.manager.add_entry({'file': file})
+        file = self.file.text  # Formatted as filename when added as widget.
+        if file and "." not in file:
+            file += ".txt"  # Extension, if filename defined.
+        self.manager.add_entry(file=file)  # Filename will default if empty.
         self.dismiss()

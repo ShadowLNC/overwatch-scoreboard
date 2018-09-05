@@ -50,15 +50,15 @@ class View(TabbedPanel):
             # finish() subfunctions (which run first, if instantiated outside).
 
             # Order is important because of dependencies.
-            self.customdatamanager = CustomDataManager(
-                **state.get('customdatamanager', {}))
+            self.customdatamanager = CustomDataManager.from_factory(
+                **state.get('customdatamanager', {}),
+                parent=self.tabcustom, manager=self)
             self.teammanager = TeamManager(**state.get('teammanager', {}))
             self.mapmanager = MapManager(**state.get('mapmanager', {}))
             self.livemanager = LiveManager(**state.get('livemanager', {}))
 
             # Add each to their respective tab.
             self.tabmaps.add_widget(self.mapmanager)
-            self.tabcustom.add_widget(self.customdatamanager)
             self.tabteams.add_widget(self.teammanager)
             self.tablive.add_widget(self.livemanager)
 
