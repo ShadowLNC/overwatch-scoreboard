@@ -56,12 +56,12 @@ class View(TabbedPanel):
             self.teammanager = TeamManager.from_factory(
                 **state.get('teammanager', {}),
                 parent=self.tabteams, manager=self)
-
             self.livemanager = LiveManager(**state.get('livemanager', {}))
-            self.mapmanager = MapManager(**state.get('mapmanager', {}))
+            self.mapmanager = MapManager.from_factory(
+                **state.get('mapmanager', {}),
+                parent=self.tabmaps, manager=self)
 
             # Add each to their respective tab.
-            self.tabmaps.add_widget(self.mapmanager)
             self.tablive.add_widget(self.livemanager)
 
         Clock.schedule_once(finish)

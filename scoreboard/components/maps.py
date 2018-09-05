@@ -2,14 +2,13 @@ from contextlib import suppress
 import os
 import re
 
-from kivy.clock import Clock
 from kivy.lang import Builder
 from kivy.logger import Logger
 from kivy.uix.boxlayout import BoxLayout
 
 from ..constants import MAPS, IMAGEROOT, OUTPUTROOT
 # NOTE: helpers also loads a kv file for widgets used.
-from ..helpers import filename_fmt, text_fmt, copyfile
+from ..helpers import LoadableWidget, filename_fmt, text_fmt, copyfile
 
 
 Builder.load_file(os.path.dirname(os.path.abspath(__file__)) + "/maps.kv")
@@ -24,42 +23,38 @@ Builder.load_file(os.path.dirname(os.path.abspath(__file__)) + "/maps.kv")
 # 888   "   888 Y88b  d88P 888  T88b
 # 888       888  "Y8888P88 888   T88b
 
-class MapManager(BoxLayout):
-    def __init__(self, *args, attackers="", mapstyle="Strips",
-                 mapset=[], current=None, **kwargs):
+class MapManager(LoadableWidget, BoxLayout):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.current = None
 
-        def finish(dt):
-            # Fix: Wait for instantiation to finish before accessing ids.
-            self.attackers.text = attackers
-            self.mapstyle.text = mapstyle
-            for child in mapset:
-                self.addmap(child)
-            # children is a stack, so current=0 is actually the last item.
-            # The export function sets this accordingly.
-            nonlocal current
-            if current is not None:
-                current = self.mapset.children[current]
-            # Set the current map last to override autocurrentmap() calls.
-            self.setcurrentmap(current)
-            self.draw()
+    @classmethod
+    def from_factory(cls, attackers="", mapstyle="Strips",
+                     mapset=[], current=None, **kwargs):
+        self = super().from_factory(**kwargs)
 
-        Clock.schedule_once(finish)  # https://stackoverflow.com/a/26918422/
+        self.attackers.text = attackers
+        self.mapstyle.text = mapstyle
+        for child in mapset:
+            self.addmap(**child)
+
+        # children is a stack, so current=0 is actually the last item.
+        # The export function sets this accordingly.
+        # Set the current map last to override autocurrentmap() calls.
+        if current is not None:
+            current = self.mapset.children[current]
+        self.setcurrentmap(current)
+
+        self.draw()
+        return self
 
     @property
     def style(self):
         return self.mapstyle.text
 
-    def addmap(self, instance=None):
-        # Add a map, either by dict args or a MapWidget already instantiated.
-        if instance is None:
-            instance = {}  # Allow NoneType to be instantiated below.
-        if isinstance(instance, dict):
-            instance = MapWidget(**instance)  # Create from args.
-        self.mapset.add_widget(instance)
-
-        # Not drawing map here - use final() sub-function after setting values.
+    def addmap(self, **data):
+        # Instantiate from args - widget inherits LoadableWidget self-adding.
+        MapWidget.from_factory(**data, parent=self.mapset, manager=self)
         self.autocurrentmap()
 
     def setcurrentmap(self, map):
@@ -204,39 +199,31 @@ class MapManager(BoxLayout):
 # 8888P   Y8888   888   888  .d88P Y88b  d88P 888            888
 # 888P     Y888 8888888 8888888P"   "Y8888P88 8888888888     888
 
-class MapWidget(BoxLayout):
-    def __init__(self, *args, pool="", map="",
-                 score1="0", score2="0", final=False, **kwargs):
+class MapWidget(LoadableWidget, BoxLayout):
+    @classmethod
+    def from_factory(cls, pool="", map="", score1="0", score2="0", final=False,
+                     **kwargs):
 
-        # WARNING
-        # It is expected that a MapWidget will be immediately added to a
-        # MapManager (before the caller returns). If this is not the case, then
-        # the widget won't be rendered (when the Clock event fires), and this
-        # code will throw a myriad of exceptions.
-
-        super().__init__(*args, **kwargs)
+        self = super().from_factory(**kwargs)
         # Cached switch states. If the callback fires and it's a mismatch,
         # then do callback stuff, otherwise suppress.
         self.cache_current = False
         self.cache_final = final
 
-        def finish(dt):
-            # Fix: Wait for instantiation to finish before accessing ids.
-            # Set switches to their cached values, only triggers callbacks if
-            # actually changing, and doesn't override changes before this func.
-            self.current.active = self.cache_current
-            self.pool.text = pool  # Triggers map selector update.
-            self.pool.values = MAPS.keys()
-            self.map.text = map
-            self.score1.text = score1
-            self.score2.text = score2
-            self.final.active = self.cache_final
+        # Set switches to their cached values, only triggers callbacks if
+        # actually changing, and doesn't override changes before this func.
+        self.current.active = self.cache_current
+        self.pool.text = pool  # Triggers map selector update.
+        self.pool.values = MAPS.keys()
+        self.map.text = map
+        self.score1.text = score1
+        self.score2.text = score2
+        self.final.active = self.cache_final
 
-            self.draw()  # Draw images once all settings are correct.
-            # self.manager.autocurrentmap() can't be here, it would override
-            # the final setcurrentmap() call in MapManager.__init__.
-
-        Clock.schedule_once(finish)  # https://stackoverflow.com/a/26918422/
+        self.draw()  # Draw images once all settings are correct.
+        # self.manager.autocurrentmap() can't be here, it would override
+        # the final setcurrentmap() call in MapManager.__init__.
+        return self
 
     @property
     def iscurrent(self):
@@ -250,7 +237,7 @@ class MapWidget(BoxLayout):
 
     @property
     def isfinal(self):
-        # Returning cached value ensures up-to-date even before final().
+        # Returning cached value ensures up-to-date even during factory.
         # e.g. autocurrentmap() could pull the False value and set current,
         # deactivating the final switch erroneously.
         # (Anecdotally, callbacks don't seem to fire until *after* final(), so
@@ -289,10 +276,6 @@ class MapWidget(BoxLayout):
             return 2
         else:
             return 0
-
-    @property
-    def manager(self):
-        return self.parent.root
 
     # The following are all event-driven methods. Draw methods always output
     # output; callback functions may call draw methods, but do not directly
