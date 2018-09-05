@@ -2,7 +2,6 @@ import json
 import os
 
 import kivy.app
-from kivy.clock import Clock
 from kivy.logger import Logger
 # from kivy.core.window import Window
 from kivy.uix.tabbedpanel import TabbedPanel
@@ -29,8 +28,9 @@ from .components.teams import TeamManager
 
 
 class View(TabbedPanel):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    @classmethod
+    def from_save(cls):
+        self = cls()
 
         # Load saved state; defaults listed below as well.
         state = {}
@@ -43,27 +43,21 @@ class View(TabbedPanel):
                     Logger.error(
                         "Scoreboard: Failed to load JSON, defaulting...")
 
-        def finish(dt):
-            # Fix: Wait for KVlang load before accessing ids.
-            # NOTE: Instantiation must occur here as well as adding each widget
-            # to their respective tabs, as managers interact in their scheduled
-            # finish() subfunctions (which run first, if instantiated outside).
+        # Order is important because of dependencies.
+        self.customdatamanager = CustomDataManager.from_factory(
+            **state.get('customdatamanager', {}),
+            parent=self.tabcustom, manager=self)
+        self.teammanager = TeamManager.from_factory(
+            **state.get('teammanager', {}),
+            parent=self.tabteams, manager=self)
+        self.livemanager = LiveManager.from_factory(
+            **state.get('livemanager', {}),
+            parent=self.tablive, manager=self)
+        self.mapmanager = MapManager.from_factory(
+            **state.get('mapmanager', {}),
+            parent=self.tabmaps, manager=self)
 
-            # Order is important because of dependencies.
-            self.customdatamanager = CustomDataManager.from_factory(
-                **state.get('customdatamanager', {}),
-                parent=self.tabcustom, manager=self)
-            self.teammanager = TeamManager.from_factory(
-                **state.get('teammanager', {}),
-                parent=self.tabteams, manager=self)
-            self.livemanager = LiveManager.from_factory(
-                **state.get('livemanager', {}),
-                parent=self.tablive, manager=self)
-            self.mapmanager = MapManager.from_factory(
-                **state.get('mapmanager', {}),
-                parent=self.tabmaps, manager=self)
-
-        Clock.schedule_once(finish)
+        return self
 
     def save(self):
         with open(SAVEFILE, 'w') as f:
@@ -80,7 +74,7 @@ class View(TabbedPanel):
 
 class Scoreboard(kivy.app.App):
     def build(self):
-        return View()
+        return View.from_save()
 
 
 if __name__ == '__main__':
