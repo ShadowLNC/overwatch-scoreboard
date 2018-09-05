@@ -1,35 +1,30 @@
 import os
 
-from kivy.clock import Clock
 from kivy.lang import Builder
 from kivy.uix.boxlayout import BoxLayout
 # from kivy.uix.modalview import ModalView
 from kivy.uix.popup import Popup
 
 # NOTE: helpers also loads a kv file for widgets used.
-from .. import helpers
+from ..helpers import LoadableWidget
 
 
 Builder.load_file(os.path.dirname(os.path.abspath(__file__)) + "/teams.kv")
 
 
-class TeamManager(BoxLayout):
-    def __init__(self, *args, teams=[], **kwargs):
-        super().__init__(*args, **kwargs)
+class TeamManager(LoadableWidget, BoxLayout):
+    @classmethod
+    def from_factory(cls, teams=[], **kwargs):
+        self = super().from_factory(**kwargs)
 
-        def finish(dt):
-            for team in teams:
-                self.addteam(team)
+        for team in teams:
+            self.addteam(**team)
 
-        Clock.schedule_once(finish)
+        return self
 
-    def addteam(self, instance=None):
-        # Add via dict args or precreated instance.
-        if instance is None:
-            instance = {}  # Allow NoneType to be instantiated below.
-        if isinstance(instance, dict):
-            instance = TeamWidget(**instance)  # Create from args.
-        self.teamset.add_widget(instance)
+    def addteam(self, **data):
+        # Instantiate from args - widget inherits LoadableWidget self-adding.
+        TeamWidget.from_factory(**data, parent=self.teamset, manager=self)
 
     def __export__(self):
         return {
@@ -37,19 +32,20 @@ class TeamManager(BoxLayout):
         }
 
 
-class TeamWidget(BoxLayout):
-    def __init__(self, *args, name="", logo="", teamcolor="#000000", sr="",
-                 roster=[], **kwargs):
-        super().__init__(*args, **kwargs)
+class TeamWidget(LoadableWidget, BoxLayout):
+    @classmethod
+    def from_factory(cls, name="", logo="", teamcolor="#000000", sr="",
+                     roster=[], **kwargs):
+        self = super().from_factory(**kwargs)
 
-        def finish(dt):
-            self.rosterview = RosterWidget(roster=roster)
-            self.name.text = name
-            self.logo.text = logo
-            self.teamcolor.text = teamcolor
-            self.sr.text = sr
+        self.rosterview = RosterWidget.from_factory(roster=roster,
+                                                    parent=None, manager=self)
+        self.name.text = name
+        self.logo.text = logo
+        self.teamcolor.text = teamcolor
+        self.sr.text = sr
 
-        Clock.schedule_once(finish)
+        return self
 
     def callback_delete(self):
         self.parent.remove_widget(self)
@@ -66,38 +62,33 @@ class TeamWidget(BoxLayout):
         }
 
 
-class RosterWidget(Popup):
-    def __init__(self, *args, roster=[], **kwargs):
-        super().__init__(*args, **kwargs)
+class RosterWidget(LoadableWidget, Popup):
+    @classmethod
+    def from_factory(cls, roster=[], **kwargs):
+        self = super().from_factory(**kwargs)
 
-        def finish(dt):
-            for player in roster:
-                self.addplayer(player)
+        for player in roster:
+            self.addplayer(**player)
 
-        Clock.schedule_once(finish)
+        return self
 
-    def addplayer(self, instance=None):
-        # Add via dict args or precreated instance.
-        if instance is None:
-            instance = {}  # Allow NoneType to be instantiated below.
-        if isinstance(instance, dict):
-            instance = PlayerWidget(**instance)  # Create from args.
-        self.playerset.add_widget(instance)
+    def addplayer(self, **data):
+        # Instantiate from args - widget inherits LoadableWidget self-adding.
+        PlayerWidget.from_factory(**data, parent=self.playerset, manager=self)
 
 
-class PlayerWidget(BoxLayout):
-    def __init__(self, *args, username="", role="Flex", sr="",
-                 hero="", **kwargs):
-        super().__init__(*args, **kwargs)
+class PlayerWidget(LoadableWidget, BoxLayout):
+    @classmethod
+    def from_factory(cls, username="", role="Flex", sr="", hero="", **kwargs):
+        self = super().from_factory(**kwargs)
 
-        def finish(dt):
-            self.user.text = username
-            self.role.text = role
-            self.sr.text = sr
-            # Hero is used for the live tab only, but is part of player data.
-            self.hero = hero
+        self.user.text = username
+        self.role.text = role
+        self.sr.text = sr
+        # Hero is used for the live tab only, but is part of player data.
+        self.hero = hero
 
-        Clock.schedule_once(finish)
+        return self
 
     def callback_delete(self):
         self.parent.remove_widget(self)
