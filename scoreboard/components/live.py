@@ -1,45 +1,57 @@
 import os
 
-from kivy.clock import Clock
 from kivy.graphics import Color
 from kivy.lang import Builder
 from kivy.uix.boxlayout import BoxLayout
 
 from ..constants import IMAGEROOT, OUTPUTROOT
+from ..helpers import LoadableWidget
 
 
 Builder.load_file(os.path.dirname(os.path.abspath(__file__)) + "/live.kv")
 
 
-class LiveManager(BoxLayout):
-    def __init__(self, *args, title="", herostyle="", herofilter=True,
-                 team1={}, team2={}, **kwargs):
-        super().__init__(*args, *kwargs)
+class LiveManager(LoadableWidget, BoxLayout):
+    @classmethod
+    def from_factory(cls, title="", herostyle="Portrait", herofilter=True,
+                     team1={}, team2={}, **kwargs):
+        self = super().from_factory(**kwargs)
 
-        def finish(dt):
-            self.title.text = title
-            self.herostyle.text = herostyle
-            self.herofilter.active = herofilter
+        self.title.text = title
+        self.herostyle.text = herostyle
+        self.herofilter.active = herofilter
 
-            self.teamset.add_widget(LiveTeam(
-                title="Team 1 (Blue)",
-                background=(0x15/255, 0x84/255, 0xb4/255, 1), **team1))
+        # Sets up self.teamlist and there's no LiveTeam objects to draw yet.
+        self.callback_teamlist()
 
-            self.teamset.add_widget(LiveTeam(
-                title="Team 2 (Red)",
-                background=(0xac/255, 0x10/255, 0x20/255, 1), **team2))
+        # Auto added.
+        LiveTeam.from_factory(
+            title="Team 1 (Blue)",
+            background=(0x15/255, 0x84/255, 0xb4/255, 1), **team1,
+            parent=self.teamset, manager=self)
+        LiveTeam.from_factory(
+            title="Team 2 (Red)",
+            background=(0xac/255, 0x10/255, 0x20/255, 1), **team2,
+            parent=self.teamset, manager=self)
 
-        Clock.schedule_once(finish)
-
-    @property
-    def view(self):
-        # We are in a TabbedPanelContent inside a TabbedPanelItem in View.
-        return self.parent.parent
+        return self
 
     def callback_title(self, value):
         # on_text fired on init is not a problem here (brief flicker).
         with open(OUTPUTROOT + "/livetitle.txt", 'w') as f:
             f.write(value)
+
+    def callback_teamlist(self, draw=True):
+        # Disallow empty team names. If duplicate names, last takes priority.
+        teamlist = {"": None}
+        for team in reversed(self.manager.teammanager.teamset.children):
+            name = team.name.text
+            if name:
+                teamlist[name] = team
+
+        self.teamlist = teamlist
+        for child in self.teamset.children:
+            child.draw_teamselect()
 
     def __export__(self):
         return {
@@ -52,50 +64,32 @@ class LiveManager(BoxLayout):
         }
 
 
-class LiveTeam(BoxLayout):
-    def __init__(self, *args, teamname="",
-                 title="Team", background=(0, 0, 0, 1), **kwargs):
-        super().__init__(*args, **kwargs)
+class LiveTeam(LoadableWidget, BoxLayout):
+    @classmethod
+    def from_factory(cls, teamname="", title="Team", background=(0, 0, 0, 1),
+                     **kwargs):
+        self = super().from_factory(**kwargs)
 
-        def finish(dt):
-            self.canvas.before.insert(0, Color(*background))
-            self.title.text = title
+        self.canvas.before.insert(0, Color(*background))
+        self.title.text = title
 
-            # Setup the current team (name/object), default to None if missing.
-            # draw_teamselect() will update values + text as well.
-            self.callback_teamlist(draw=False)  # Can't draw teamselect yet.
-            self.team = self.teamlist.get(teamname, None)
-            self.draw_teamselect()  # Draw now that we have set self.team.
+        # Setup the current team (name/object), default to None if missing.
+        self.team = self.manager.teamlist.get(teamname, None)
+        self.draw_teamselect()  # Draw now that we have set self.team.
 
-            for i in range(6):
-                pass  # TODO Add the LivePlayer widgets.
+        for i in range(6):
+            pass  # TODO Add the LivePlayer widgets.
 
-        Clock.schedule_once(finish)
-
-    @property
-    def manager(self):
-        return self.parent.root
+        return self
 
     @property
     def index1(self):
         # 1-indexed position of this widget in its parent.
         return len(self.parent.children) - self.parent.children.index(self)
 
-    def callback_teamlist(self, draw=True):
-        # Disallow empty team names. If duplicate names, last takes priority.
-        teamlist = {"": None}
-        for team in reversed(self.manager.view.teammanager.teamset.children):
-            name = team.name.text
-            if name:
-                teamlist[name] = team
-
-        self.teamlist = teamlist
-        if draw:
-            self.draw_teamselect()
-
     def callback_teamselect(self, value):
         # This shouldn't KeyError, we have limited teamselect values.
-        team = self.teamlist[value]
+        team = self.manager.teamlist[value]
         if team != self.team:
             # Don't redraw unless necessary (could be just name change).
             self.draw_players()
@@ -103,12 +97,13 @@ class LiveTeam(BoxLayout):
 
     def draw_teamselect(self):
         # Sync the team selector against the team list.
-        self.teamselect.values = self.teamlist.keys()
+        teamlist = self.manager.teamlist
+        self.teamselect.values = teamlist.keys()
 
         # Try to maintain self.team sync (change self.teamlist.text)
         # if failure, set blank (don't guess from text value).
         # Both of these, if changing the text value, will trigger a redraw.
-        if self.team is not None and self.team in self.teamlist.values():
+        if self.team is not None and self.team in teamlist.values():
             self.teamselect.text = self.team.name.text
         else:
             # Team no longer exists (or hidden by same name), set empty/None.
