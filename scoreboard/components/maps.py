@@ -78,6 +78,17 @@ class MapManager(LoadableWidget, BoxLayout):
                 return
         self.setcurrentmap(None)
 
+    def callback_swap(self):
+        for child in self.mapset.children:
+            child.callback_swap()  # Swap map scores.
+
+        # Swap the attackers value. Use existing if lookup fails (no change).
+        # This also applies if there's no currently attacking team (no switch).
+        swap = {"Team 1": "Team 2", "Team 2": "Team 1"}
+        with suppress(KeyError):
+            # EAFP means .get() is NOT preferred here.
+            self.attackers.text = swap[self.attackers.text]
+
     def callback_mapstyle(self):
         for child in self.mapset.children:
             child.draw_map()
@@ -280,6 +291,13 @@ class MapWidget(LoadableWidget, BoxLayout):
     # The following are all event-driven methods. Draw methods always output
     # output; callback functions may call draw methods, but do not directly
     # output. Both callback and draw functions may have KVlang triggers.
+
+    def callback_swap(self):
+        # NOTE: This is called from the Live tab, not any internal actions.
+        # This will fire any callbacks as necessary (unless drawn, since no
+        # change in values, but no redraw necessary in that instance).
+        # `a, b = b, a` swaps values.
+        self.score1.text, self.score2.text = self.score2.text, self.score1.text
 
     def callback_current(self, on):
         self.draw_map()  # Desat mode for non-current maps.

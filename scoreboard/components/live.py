@@ -58,6 +58,7 @@ class LiveManager(LoadableWidget, BoxLayout):
         teams = self.teamset.children
         # `a, b = b, a` swaps values
         teams[0].team, teams[1].team = teams[1].team, teams[0].team
+        self.manager.mapmanager.callback_swap()  # Swap scores.
 
         # Perhaps there's a better way to trigger draw_teamselect on each.
         for child in self.teamset.children:
