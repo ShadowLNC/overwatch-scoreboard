@@ -55,15 +55,13 @@ class LiveManager(LoadableWidget, BoxLayout):
             child.draw_teamselect()
 
     def callback_swap(self):
-        teams = self.teamset.children
+        # We swap the text values, triggering the callback (if changing).
+        # The callback causes a redraw of the team.
+        a = self.teamset.children[0].teamselect
+        b = self.teamset.children[1].teamselect
         # `a, b = b, a` swaps values
-        teams[0].team, teams[1].team = teams[1].team, teams[0].team
+        a.text, b.text = b.text, a.text
         self.manager.mapmanager.callback_swap()  # Swap scores.
-
-        # Perhaps there's a better way to trigger draw_teamselect on each.
-        for child in self.teamset.children:
-            child.draw_teamselect()
-            child.draw()
 
     def __export__(self):
         return {
@@ -77,6 +75,10 @@ class LiveManager(LoadableWidget, BoxLayout):
 
 
 class LiveTeam(LoadableWidget, BoxLayout):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.team = None
+
     @classmethod
     def from_factory(cls, teamname="", title="Team", background=(0, 0, 0, 1),
                      **kwargs):
@@ -85,10 +87,11 @@ class LiveTeam(LoadableWidget, BoxLayout):
         self.canvas.before.insert(0, Color(*background))
         self.title.text = title
 
-        # Setup the current team (name/object), default to None if missing.
-        self.team = self.manager.teamlist.get(teamname, None)
+        # Setup the current team (name). This fires callback_teamselect.
+        self.teamselect.text = teamname
         self.draw_teamselect()  # Draw now that we have set self.team.
-        self.draw()
+        if self.team is None:
+            self.draw()  # It won't draw otherwise (teamselect no change).
 
         for i in range(6):
             pass  # TODO Add the LivePlayer widgets.
@@ -102,7 +105,13 @@ class LiveTeam(LoadableWidget, BoxLayout):
 
     def callback_teamselect(self, value):
         # This shouldn't KeyError, we have limited teamselect values.
-        team = self.manager.teamlist[value]
+        try:
+            team = self.manager.teamlist[value]
+        except KeyError:
+            # Fallback to None. The callback will fire again when changing.
+            self.teamselect.text = ""
+            return
+
         if team != self.team:
             # Don't redraw unless necessary (could be just name change).
             self.team = team
