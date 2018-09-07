@@ -48,11 +48,13 @@
         id: name
         placeholder: "Team Name"
         multiline: False
+        on_text: root.callback_event("name")
     BoxLayout:
         orientation: 'horizontal'
         TextInput:
             id: logo
             multiline: False
+            on_text: root.callback_event("logo")
         Button:
             text: "..."
         # FileChooserIconView:
@@ -62,6 +64,7 @@
         TextInput:
             id: teamcolor
             multiline: False
+            on_text: root.callback_event("color")
         Button:
             text: "Pick"
         # ColorPicker:
@@ -71,6 +74,7 @@
     IntInput:
         id: sr
         hint_text: "(auto)"
+        on_text: root.callback_event("sr")
     DeleteWidget:
         on_press: root.callback_delete()
 

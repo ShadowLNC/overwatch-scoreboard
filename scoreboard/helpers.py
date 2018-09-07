@@ -29,6 +29,22 @@ class LoadableWidget:
         return self
 
 
+class Synchronisable:
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.listeners = []
+
+    def sync(self, listener):
+        self.listeners.append(listener)
+
+    def desync(self, listener):
+        # Get the right-index of the object in case added multiple times.
+        # This allows sync/desync to act as a stack, and maintain call order.
+        with suppress(ValueError):
+            rindex = -1 - list(reversed(self.listeners)).index(listener)
+            self.listeners.pop(rindex)
+
+
 def filename_fmt(val):
     val = unicodedata.normalize('NFD', val)  # Normalise, then strip others.
     val = str(bytes(val, encoding='ascii', errors='ignore'), encoding='ascii')

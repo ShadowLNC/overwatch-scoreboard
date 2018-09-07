@@ -1,6 +1,5 @@
 from contextlib import suppress
 import os
-import re
 
 from kivy.lang import Builder
 from kivy.uix.boxlayout import BoxLayout
@@ -8,13 +7,13 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.popup import Popup
 
 # NOTE: helpers also loads a kv file for widgets used.
-from ..helpers import LoadableWidget, copyfile
+from ..helpers import LoadableWidget, Synchronisable, copyfile
 
 
 Builder.load_file(os.path.dirname(os.path.abspath(__file__)) + "/teams.kv")
 
 
-class TeamManager(LoadableWidget, BoxLayout):
+class TeamManager(LoadableWidget, Synchronisable, BoxLayout):
     @classmethod
     def from_factory(cls, teams=[], **kwargs):
         self = super().from_factory(**kwargs)
@@ -26,7 +25,18 @@ class TeamManager(LoadableWidget, BoxLayout):
 
     def addteam(self, **data):
         # Instantiate from args - widget inherits LoadableWidget self-adding.
+        # The team name change will fire callback_teamset (plus it will fire on
+        # the TextInput instantiation anyway, due to the Kivy bug #3588).
+        # Since we ignore empty team names anyway, we do not rely on the bug.
         TeamWidget.from_factory(**data, parent=self.teamset, manager=self)
+
+    def callback_teamset(self):
+        # Teamset has changed, either deletion, addition, or (later) reorder.
+        # This is just self.manager.livemanager but we need the Synchronisable
+        # pattern since it won't be instantiated until after this object (the
+        # factory method indirectly calls this).
+        for listener in self.listeners:
+            listener.callback_teamset()
 
     def __export__(self):
         return {
@@ -34,7 +44,7 @@ class TeamManager(LoadableWidget, BoxLayout):
         }
 
 
-class TeamWidget(LoadableWidget, BoxLayout):
+class TeamWidget(LoadableWidget, Synchronisable, BoxLayout):
     @classmethod
     def from_factory(cls, name="", logo="", teamcolor="#ffffff", sr="",
                      roster=[], **kwargs):
@@ -51,6 +61,15 @@ class TeamWidget(LoadableWidget, BoxLayout):
 
     def callback_delete(self):
         self.parent.remove_widget(self)
+        self.manager.callback_teamset()
+
+    def callback_event(self, event):
+        if event == "name":
+            # Necessary to update teamselect lists.
+            self.manager.callback_teamset()
+
+        for listener in self.listeners:
+            listener.callback_event(event)
 
     def draw_name(self, target):
         with open(target, 'w') as f:

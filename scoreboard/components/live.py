@@ -23,7 +23,8 @@ class LiveManager(LoadableWidget, BoxLayout):
         self.herofilter.active = herofilter
 
         # Sets up self.teamlist and there's no LiveTeam objects to draw yet.
-        self.callback_teamlist()
+        self.manager.teammanager.sync(self)  # Sync for future changes.
+        self.callback_teamset()
 
         # Auto added.
         LiveTeam.from_factory(
@@ -42,7 +43,8 @@ class LiveManager(LoadableWidget, BoxLayout):
         with open(OUTPUTROOT + "/livetitle.txt", 'w') as f:
             f.write(value)
 
-    def callback_teamlist(self):
+    # Called by TeamManager after we sync to it.
+    def callback_teamset(self):
         # Disallow empty team names. If duplicate names, last takes priority.
         teamlist = {"": None}
         for team in reversed(self.manager.teammanager.teamset.children):
@@ -75,6 +77,10 @@ class LiveManager(LoadableWidget, BoxLayout):
 
 
 class LiveTeam(LoadableWidget, BoxLayout):
+    # Drawable properties for an associated TeamWidget.
+    # Class member as opposed to instance memeber since it's constant.
+    PROPERTIES = ("name", "logo", "color", "sr")
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.team = None
@@ -112,10 +118,22 @@ class LiveTeam(LoadableWidget, BoxLayout):
             self.teamselect.text = ""
             return
 
+        # If the team has changed, update sync and redraw.
         if team != self.team:
-            # Don't redraw unless necessary (could be just name change).
+            if self.team is not None:
+                self.team.desync(self)
+            if team is not None:
+                team.sync(self)
             self.team = team
             self.draw()
+
+        # Name has changed; we got a callback. However, callback_event() will
+        # also be fired, so an extra self.draw_property("name") is unnecessary.
+
+    def callback_event(self, event):
+        if event in self.PROPERTIES:
+            self.draw_property(event)
+        # Add the roster change here when implementing.
 
     def draw_teamselect(self):
         # Sync the team selector against the team list.
@@ -131,35 +149,31 @@ class LiveTeam(LoadableWidget, BoxLayout):
             # Team no longer exists (or hidden by same name), set empty/None.
             self.teamselect.text = ""
 
-    def draw_name(self):
-        target = "{}/team{}.txt".format(OUTPUTROOT, self.index1)
-        if self.team is not None:
-            self.team.draw_name(target)
-        else:
-            with suppress(FileNotFoundError):
-                os.remove(target)
+    def draw_property(self, property):
+        # name, logo, color, sr
+        if property not in self.PROPERTIES:
+            # If not str then this is gonna throw a typeerror trying to add.
+            raise ValueError("Unknown property: " + property)
 
-    def draw_color(self):
-        target = "{}/team{}color.html".format(OUTPUTROOT, self.index1)
-        if self.team is not None:
-            self.team.draw_color(target)
-        else:
-            with suppress(FileNotFoundError):
-                os.remove(target)
+        filename = property
+        if filename == "name":
+            filename = ""  # "name" is not used in the target filename.
 
-    def draw_logo(self):
-        target = "{}/team{}logo.png".format(OUTPUTROOT, self.index1)
+        # The extension is txt by default but we need to specify when it's not.
+        extensions = {"logo": "png", "color": "html"}
+        target = "{}/team{}{}.{}".format(OUTPUTROOT, self.index1, filename,
+                                         extensions.get(property, "txt"))
         if self.team is not None:
-            self.team.draw_logo(target)
+            call = getattr(self.team, "draw_" + property)
+            call(target)
+        elif property == "color":
+            # Maintain the refresh rate by putting an html file with no body.
+            with open(target, 'w') as f:
+                f.write("<!DOCTYPE html><html><head>"
+                        "<meta http-equiv=\"refresh\" content=\"1\">"
+                        "<title>Placeholder</title></head></html>")
         else:
-            with suppress(FileNotFoundError):
-                os.remove(target)
-
-    def draw_sr(self):
-        target = "{}/team{}sr.txt".format(OUTPUTROOT, self.index1)
-        if self.team is not None:
-            self.team.draw_sr(target)
-        else:
+            # Perhaps this won't work for color.html since we lose refresh?
             with suppress(FileNotFoundError):
                 os.remove(target)
 
@@ -169,10 +183,9 @@ class LiveTeam(LoadableWidget, BoxLayout):
         pass
 
     def draw(self):
-        self.draw_name()
-        self.draw_color()
-        self.draw_logo()
-        self.draw_sr()
+        # We don't call draw_teamselect here, it actually calls us.
+        for property in self.PROPERTIES:
+            self.draw_property(property)
 
     def __export__(self):
         return {
