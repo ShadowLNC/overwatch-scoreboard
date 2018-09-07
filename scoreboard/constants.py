@@ -4,7 +4,7 @@ SAVEFILE = "save.json"
 
 # For all heroes, use sorted(sum(HEROES.values(), [])).
 HEROES = {
-    'damage': [
+    'Damage': [
         'Bastion',
         'Doomfist',
         'Genji',
@@ -22,7 +22,7 @@ HEROES = {
         'Widowmaker',
     ],
 
-    'tank': [
+    'Tank': [
         'D.Va',
         'Orisa',
         'Reinhardt',
@@ -32,7 +32,7 @@ HEROES = {
         'Zarya',
     ],
 
-    'support': [
+    'Support': [
         'Ana',
         'Brigitte',
         'Lúcio',

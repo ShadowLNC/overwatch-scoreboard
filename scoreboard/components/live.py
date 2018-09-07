@@ -1,11 +1,12 @@
 from contextlib import suppress
+import itertools
 import os
 
 from kivy.graphics import Color
 from kivy.lang import Builder
 from kivy.uix.boxlayout import BoxLayout
 
-from ..constants import IMAGEROOT, OUTPUTROOT
+from ..constants import OUTPUTROOT, HEROES
 from ..helpers import LoadableWidget
 
 
@@ -14,7 +15,7 @@ Builder.load_file(os.path.dirname(os.path.abspath(__file__)) + "/live.kv")
 
 class LiveManager(LoadableWidget, BoxLayout):
     @classmethod
-    def from_factory(cls, title="", herostyle="Portrait", herofilter=True,
+    def from_factory(cls, title="", herostyle="Portraits", herofilter=True,
                      team1={}, team2={}, **kwargs):
         self = super().from_factory(**kwargs)
 
@@ -42,6 +43,14 @@ class LiveManager(LoadableWidget, BoxLayout):
         # on_text fired on init is not a problem here (brief flicker).
         with open(OUTPUTROOT + "/livetitle.txt", 'w') as f:
             f.write(value)
+
+    def callback_herostyle(self):
+        for child in self.teamset.children:
+            child.callback_herostyle()
+
+    def callback_herofilter(self):
+        for child in self.teamset.children:
+            child.callback_herofilter()
 
     # Called by TeamManager after we sync to it.
     def callback_teamset(self):
@@ -99,8 +108,11 @@ class LiveTeam(LoadableWidget, BoxLayout):
         if self.team is None:
             self.draw()  # It won't draw otherwise (teamselect no change).
 
+        # Add the LivePlayer widgets after we've drawn, prevent double redraw.
+        players = self.teamroster
         for i in range(6):
-            pass  # TODO Add the LivePlayer widgets.
+            LivePlayer.from_factory(player=next(players),
+                                    parent=self.players, manager=self)
 
         return self
 
@@ -108,6 +120,16 @@ class LiveTeam(LoadableWidget, BoxLayout):
     def index1(self):
         # 1-indexed position of this widget in its parent.
         return len(self.parent.children) - self.parent.children.index(self)
+
+    @property
+    def teamroster(self):
+        # An iterator of self.team's PlayerWidgets, followed by repeating None.
+        players = itertools.repeat(None)
+        if self.team is not None:
+            players = itertools.chain(
+                reversed(self.team.rosterview.playerset.children), players)
+
+        return players
 
     def callback_teamselect(self, value):
         # This shouldn't KeyError, we have limited teamselect values.
@@ -130,10 +152,19 @@ class LiveTeam(LoadableWidget, BoxLayout):
         # Name has changed; we got a callback. However, callback_event() will
         # also be fired, so an extra self.draw_property("name") is unnecessary.
 
+    def callback_herostyle(self):
+        for player in self.players.children:
+            player.draw_property("hero")
+
+    def callback_herofilter(self):
+        for player in self.players.children:
+            player.draw_heroselect()
+
     def callback_event(self, event):
         if event in self.PROPERTIES:
             self.draw_property(event)
-        # Add the roster change here when implementing.
+        elif event == "roster":
+            self.draw_roster()
 
     def draw_teamselect(self):
         # Sync the team selector against the team list.
@@ -152,7 +183,7 @@ class LiveTeam(LoadableWidget, BoxLayout):
     def draw_property(self, property):
         # name, logo, color, sr
         if property not in self.PROPERTIES:
-            # If not str then this is gonna throw a typeerror trying to add.
+            # If not str then this is gonna throw a TypeError trying to add.
             raise ValueError("Unknown property: " + property)
 
         filename = property
@@ -173,19 +204,21 @@ class LiveTeam(LoadableWidget, BoxLayout):
                         "<meta http-equiv=\"refresh\" content=\"1\">"
                         "<title>Placeholder</title></head></html>")
         else:
-            # Perhaps this won't work for color.html since we lose refresh?
             with suppress(FileNotFoundError):
                 os.remove(target)
 
-    def draw_players(self):
+    def draw_roster(self):
         # We could delete and regenerate the hero selectors, this means there
         # would not be "inert" selectors for players that don't exist.
-        pass
+        players = self.teamroster
+        for child in reversed(self.players.children):
+            child.player = next(players)
 
     def draw(self):
         # We don't call draw_teamselect here, it actually calls us.
         for property in self.PROPERTIES:
             self.draw_property(property)
+        self.draw_roster()
 
     def __export__(self):
         return {
@@ -193,32 +226,119 @@ class LiveTeam(LoadableWidget, BoxLayout):
         }
 
 
-class LivePlayer(BoxLayout):
+class LivePlayer(LoadableWidget, BoxLayout):
+    PROPERTIES = ("user", "role", "sr", "hero")
+
+    @classmethod
+    def from_factory(cls, player=None, **kwargs):
+        self = super().from_factory(**kwargs)
+        if player is not None:
+            self.player = player
+        else:
+            self.draw()  # Fired by setting player, but only if changing.
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._player = None
+
     @property
-    def manager(self):
-        return self.parent.root
+    def player(self):
+        return self._player
+
+    @player.setter
+    def player(self, player):
+        if player != self._player:
+
+            if self._player is not None:
+                self._player.desync(self)
+            if player is not None:
+                player.sync(self)
+
+            self._player = player
+            self.draw()
 
     @property
     def index1(self):
         # 1-indexed position of this widget in its parent.
         return len(self.parent.children) - self.parent.children.index(self)
 
+    def callback_event(self, event):
+        if event in self.PROPERTIES:
+            self.draw_property(event)
+
     def callback_hero(self, hero):
-        self.teamplayer.hero = hero
-        self.draw_hero()
+        # We do not need to sync if we just got a new self.player and set hero
+        # text equal to the new player's hero (or if self.player is None).
+        if self.player is not None and hero != self.player.hero:
+            self.player.hero = hero
+            self.draw_property("hero")
 
-    def draw_hero(self):
-        target = "{}/team{}hero{}".format(OUTPUTROOT,
-                                          self.manager.index1, self.index1)
-        # infile = "{}/heroes/{}/{}".format(IMAGEROOT, herostyle, )
+    def draw_heroselect(self):
+        values = tuple()
+        if self.player is not None:
+            filter = None
+            if self.manager.manager.herofilter.active:
+                filter = self.player.role.text
 
-    def draw_user(self):
-        pass
+            # Flex isn't a defined role and gets all the heroes (no filter).
+            # If the filter switch is off, we also get all heroes.
+            try:
+                values = HEROES[filter]
+            except KeyError:
+                values = sum(HEROES.values(), [])  # Add the lists together.
+        if values:
+            # Only add blank option if we have selectable options.
+            values = [""] + sorted(values)  # Should sort in case all heroes.
+        self.hero.values = values
 
-    def draw_role(self):
-        pass
+    def draw_property(self, property):
+        if property not in self.PROPERTIES:
+            # If not str then this is gonna throw a TypeError trying to add.
+            raise ValueError("Unknown property: " + property)
+
+        # Extra steps for certain properties.
+        if property == "user":
+            if self.player is not None:
+                self.user.text = self.player.user.text
+            else:
+                self.user.text = "No Player"
+
+        elif property == "role":
+            if self.player is not None:
+                self.role.text = self.player.role.text
+            else:
+                self.role.text = "No Role"
+
+            self.draw_heroselect()
+
+        elif property == "hero":
+            # Won't trigger callback_hero() if no player/not actually changing.
+            if self.player is not None:
+                self.hero.text = self.player.hero
+            else:
+                self.hero.text = "No Hero"  # "role" removes selection values.
+
+        # The extension is txt by default but we need to specify when it's not.
+        extensions = {"role": "png", "hero": "png"}
+        target = "{}/team{}{}{}.{}".format(
+            # E.g. team1user1.txt (team number, property, player number).
+            OUTPUTROOT, self.manager.index1, property, self.index1,
+            extensions.get(property, "txt"))
+
+        if self.player is not None:
+            call = getattr(self.player, "draw_" + property)
+
+            # Pass additional arguments as necessary.
+            kwargs = {}
+            if property == "hero":
+                kwargs["style"] = self.manager.manager.herostyle.text
+            call(target, **kwargs)
+
+        else:
+            with suppress(FileNotFoundError):
+                os.remove(target)
 
     def draw(self):
-        self.draw_user()
-        self.draw_role()
-        self.draw_hero()
+        for property in self.PROPERTIES:
+            # property = "role" calls draw_heroselect().
+            self.draw_property(property)

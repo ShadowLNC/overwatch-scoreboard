@@ -126,10 +126,13 @@
     TextInput:
         id: user
         multiline: False
+        on_text: root.callback_event("user")
     Spinner:
         id: role
         values: ('Damage', 'Tank', 'Support', 'Flex')
+        on_text: root.callback_event("role")
     IntInput:
         id: sr
+        on_text: root.callback_event("sr")
     DeleteWidget:
         on_press: root.callback_delete()

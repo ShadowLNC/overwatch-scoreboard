@@ -6,8 +6,10 @@ from kivy.uix.boxlayout import BoxLayout
 # from kivy.uix.modalview import ModalView
 from kivy.uix.popup import Popup
 
+from ..constants import IMAGEROOT
 # NOTE: helpers also loads a kv file for widgets used.
-from ..helpers import LoadableWidget, Synchronisable, copyfile
+from ..helpers import LoadableWidget, Synchronisable, \
+                      copyfile, filename_fmt, text_fmt
 
 
 Builder.load_file(os.path.dirname(os.path.abspath(__file__)) + "/teams.kv")
@@ -73,7 +75,7 @@ class TeamWidget(LoadableWidget, Synchronisable, BoxLayout):
 
     def draw_name(self, target):
         with open(target, 'w') as f:
-            f.write(self.name.text)
+            f.write(text_fmt(self.name.text))
 
     def draw_logo(self, target):
         # Will copy missing.png as necessary.
@@ -104,7 +106,9 @@ class TeamWidget(LoadableWidget, Synchronisable, BoxLayout):
             # Integer average; max(1, len) prevents zero division.
             sr //= max(1, len(self.rosterview.playerset.children))
         with open(target, 'w') as f:
-            f.write(str(sr))  # Gotta write a string.
+            # text_fmt will cast to string and transform case but user should
+            # only enter numbers, so there should be no case to transform.
+            f.write(text_fmt(sr))
 
     def __export__(self):
         return {
@@ -131,9 +135,10 @@ class RosterWidget(LoadableWidget, Popup):
     def addplayer(self, **data):
         # Instantiate from args - widget inherits LoadableWidget self-adding.
         PlayerWidget.from_factory(**data, parent=self.playerset, manager=self)
+        self.manager.callback_event("roster")
 
 
-class PlayerWidget(LoadableWidget, BoxLayout):
+class PlayerWidget(LoadableWidget, Synchronisable, BoxLayout):
     @classmethod
     def from_factory(cls, username="", role="Flex", sr="", hero="", **kwargs):
         self = super().from_factory(**kwargs)
@@ -148,6 +153,41 @@ class PlayerWidget(LoadableWidget, BoxLayout):
 
     def callback_delete(self):
         self.parent.remove_widget(self)
+        self.manager.manager.callback_event("roster")
+
+    def callback_event(self, event):
+        for listener in self.listeners:
+            listener.callback_event(event)
+
+        if not self.manager.manager.sr.text:
+            self.manager.manager.callback_event("sr")  # Recalc auto team SR.
+
+    def draw_user(self, target):
+        with open(target, 'w') as f:
+            f.write(text_fmt(self.user.text))
+
+    def draw_role(self, target):
+        role = filename_fmt(self.role.text)
+        if role:
+            infile = "{}/game/roles/{}.png".format(IMAGEROOT, role)
+            copyfile(infile, target, delete_if_missing=False)
+        else:
+            with suppress(FileNotFoundError):
+                os.remove(target)
+
+    def draw_sr(self, target):
+        with open(target, 'w') as f:
+            f.write(text_fmt(self.sr.text))
+
+    def draw_hero(self, target, style="Portraits"):
+        hero = filename_fmt(self.hero)
+        if hero:
+            style = filename_fmt(style)
+            infile = "{}/heroes/{}/{}.png".format(IMAGEROOT, style, hero)
+            copyfile(infile, target, delete_if_missing=False)
+        else:
+            with suppress(FileNotFoundError):
+                os.remove(target)
 
     def __export__(self):
         return {
