@@ -44,6 +44,10 @@ class Synchronisable:
             rindex = -1 - list(reversed(self.listeners)).index(listener)
             self.listeners.pop(rindex)
 
+    def callback_event(self, event):
+        for listener in self.listeners:
+            listener.callback_event(event)
+
 
 def filename_fmt(val):
     val = unicodedata.normalize('NFD', val)  # Normalise, then strip others.

@@ -8,6 +8,7 @@ from kivy.uix.boxlayout import BoxLayout
 
 from ..constants import OUTPUTROOT, HEROES
 from ..helpers import LoadableWidget
+from .teams import TeamWidget
 
 
 Builder.load_file(os.path.dirname(os.path.abspath(__file__)) + "/live.kv")
@@ -51,6 +52,11 @@ class LiveManager(LoadableWidget, BoxLayout):
     def callback_herofilter(self):
         for child in self.teamset.children:
             child.callback_herofilter()
+
+    def callback_event(self, event):
+        # Realistically this can only be "teamset" but we should double check.
+        if event == "teamset":
+            self.callback_teamset()
 
     # Called by TeamManager after we sync to it.
     def callback_teamset(self):
@@ -199,10 +205,7 @@ class LiveTeam(LoadableWidget, BoxLayout):
             call(target)
         elif property == "color":
             # Maintain the refresh rate by putting an html file with no body.
-            with open(target, 'w') as f:
-                f.write("<!DOCTYPE html><html><head>"
-                        "<meta http-equiv=\"refresh\" content=\"1\">"
-                        "<title>Placeholder</title></head></html>")
+            TeamWidget.make_color(target)
         else:
             with suppress(FileNotFoundError):
                 os.remove(target)
@@ -263,6 +266,9 @@ class LivePlayer(LoadableWidget, BoxLayout):
         return len(self.parent.children) - self.parent.children.index(self)
 
     def callback_event(self, event):
+        if event == "battletag":
+            event = "user"
+
         if event in self.PROPERTIES:
             self.draw_property(event)
 
@@ -299,7 +305,7 @@ class LivePlayer(LoadableWidget, BoxLayout):
         # Extra steps for certain properties.
         if property == "user":
             if self.player is not None:
-                self.user.text = self.player.user.text
+                self.user.text = self.player.user
             else:
                 self.user.text = "No Player"
 

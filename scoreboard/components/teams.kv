@@ -93,7 +93,7 @@
             Label:
                 text: "Drag"
             Label:
-                text: "Username"
+                text: "BattleTag"
             Label:
                 text: "Role"
             Label:
@@ -117,16 +117,16 @@
 
 
 <PlayerWidget>:
-    user: user
+    battletag: battletag
     role: role
     sr: sr
 
     orientation: 'horizontal'
     DragHandleWidget:
     TextInput:
-        id: user
+        id: battletag
         multiline: False
-        on_text: root.callback_event("user")
+        on_text: root.callback_event("battletag")
     Spinner:
         id: role
         values: ('Damage', 'Tank', 'Support', 'Flex')

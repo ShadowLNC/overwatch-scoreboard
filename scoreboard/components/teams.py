@@ -16,6 +16,11 @@ Builder.load_file(os.path.dirname(os.path.abspath(__file__)) + "/teams.kv")
 
 
 class TeamManager(LoadableWidget, Synchronisable, BoxLayout):
+    # callback_event handles "teamset" - teamset has changed, either deletion,
+    # addition, or (later) reorder. This is just self.manager.livemanager but
+    # we need to use Synchronisable since livemanager won't be instantiated
+    # until after this object (the factory method indirectly fires the event).
+
     @classmethod
     def from_factory(cls, teams=[], **kwargs):
         self = super().from_factory(**kwargs)
@@ -27,18 +32,10 @@ class TeamManager(LoadableWidget, Synchronisable, BoxLayout):
 
     def addteam(self, **data):
         # Instantiate from args - widget inherits LoadableWidget self-adding.
-        # The team name change will fire callback_teamset (plus it will fire on
-        # the TextInput instantiation anyway, due to the Kivy bug #3588).
+        # The team name change will fire callback_event teamset (plus it will
+        # fire on the TextInput instantiation anyway, due to Kivy bug #3588).
         # Since we ignore empty team names anyway, we do not rely on the bug.
         TeamWidget.from_factory(**data, parent=self.teamset, manager=self)
-
-    def callback_teamset(self):
-        # Teamset has changed, either deletion, addition, or (later) reorder.
-        # This is just self.manager.livemanager but we need the Synchronisable
-        # pattern since it won't be instantiated until after this object (the
-        # factory method indirectly calls this).
-        for listener in self.listeners:
-            listener.callback_teamset()
 
     def __export__(self):
         return {
@@ -61,17 +58,32 @@ class TeamWidget(LoadableWidget, Synchronisable, BoxLayout):
 
         return self
 
+    @staticmethod
+    def make_color(target, color=None):
+        # We don't care if the colour is invalid, not our problem.
+        with open(target, 'w') as f:
+            f.write("<!DOCTYPE html>"
+                    "<html>"
+                    "<head>"
+                    "<meta http-equiv=\"refresh\" content=\"1\">"
+                    "<title>Solid Colour</title>"
+                    "</head>")
+            if color is not None:
+                f.write("<body style=\"width:100%; height:100%; "
+                        "background-color:{};\">"
+                        "</body>".format(color))
+            f.write("</html>")
+
     def callback_delete(self):
         self.parent.remove_widget(self)
-        self.manager.callback_teamset()
+        self.manager.callback_event("teamset")
 
     def callback_event(self, event):
+        super().callback_event(event)
+
         if event == "name":
             # Necessary to update teamselect lists.
-            self.manager.callback_teamset()
-
-        for listener in self.listeners:
-            listener.callback_event(event)
+            self.manager.callback_event("teamset")
 
     def draw_name(self, target):
         with open(target, 'w') as f:
@@ -82,18 +94,7 @@ class TeamWidget(LoadableWidget, Synchronisable, BoxLayout):
         copyfile(self.logo.text, target)
 
     def draw_color(self, target):
-        # We don't care if the colour is invalid, not our problem.
-        with open(target, 'w') as f:
-            f.write("<!DOCTYPE html>"
-                    "<html>"
-                    "<head>"
-                    "    <meta http-equiv=\"refresh\" content=\"1\">"
-                    "    <title>Solid Colour</title>"
-                    "</head>"
-                    "<body style=\"width:100%; height:100%; "
-                    "background-color:{};\">"
-                    "</body>"
-                    "</html>".format(self.teamcolor.text))
+        self.__class__.make_color(target, self.teamcolor.text)
 
     def draw_sr(self, target):
         sr = self.sr.text
@@ -140,10 +141,10 @@ class RosterWidget(LoadableWidget, Popup):
 
 class PlayerWidget(LoadableWidget, Synchronisable, BoxLayout):
     @classmethod
-    def from_factory(cls, username="", role="Flex", sr="", hero="", **kwargs):
+    def from_factory(cls, battletag="", role="Flex", sr="", hero="", **kwargs):
         self = super().from_factory(**kwargs)
 
-        self.user.text = username
+        self.battletag.text = battletag
         self.role.text = role
         self.sr.text = sr
         # Hero is used for the live tab only, but is part of player data.
@@ -151,20 +152,39 @@ class PlayerWidget(LoadableWidget, Synchronisable, BoxLayout):
 
         return self
 
+    @staticmethod
+    def make_hero(target, hero, style="Portraits"):
+        hero = filename_fmt(hero)
+        if hero:
+            style = filename_fmt(style)
+            infile = "{}/heroes/{}/{}.png".format(IMAGEROOT, style, hero)
+            copyfile(infile, target, delete_if_missing=False)
+        else:
+            with suppress(FileNotFoundError):
+                os.remove(target)
+
+    @property
+    def user(self):
+        # Cut off the numeric part of the battletag.
+        return self.battletag.text.rsplit("#", 1)[0]
+
     def callback_delete(self):
         self.parent.remove_widget(self)
         self.manager.manager.callback_event("roster")
 
     def callback_event(self, event):
-        for listener in self.listeners:
-            listener.callback_event(event)
+        super().callback_event(event)
 
         if not self.manager.manager.sr.text:
             self.manager.manager.callback_event("sr")  # Recalc auto team SR.
 
-    def draw_user(self, target):
+    def draw_user(self, target, full=False):
+        data = self.battletag.text
+        if not full:
+            data = self.user  # Numeric part removed.
+
         with open(target, 'w') as f:
-            f.write(text_fmt(self.user.text))
+            f.write(text_fmt(data))
 
     def draw_role(self, target):
         role = filename_fmt(self.role.text)
@@ -180,18 +200,11 @@ class PlayerWidget(LoadableWidget, Synchronisable, BoxLayout):
             f.write(text_fmt(self.sr.text))
 
     def draw_hero(self, target, style="Portraits"):
-        hero = filename_fmt(self.hero)
-        if hero:
-            style = filename_fmt(style)
-            infile = "{}/heroes/{}/{}.png".format(IMAGEROOT, style, hero)
-            copyfile(infile, target, delete_if_missing=False)
-        else:
-            with suppress(FileNotFoundError):
-                os.remove(target)
+        self.__class__.make_hero(target, self.hero, style)
 
     def __export__(self):
         return {
-            'username': self.user.text,
+            'battletag': self.battletag.text,
             'role': self.role.text,
             'sr': self.sr.text,
             'hero': self.hero,
