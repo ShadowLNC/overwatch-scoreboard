@@ -7,14 +7,16 @@ from kivy.lang import Builder
 from kivy.uix.boxlayout import BoxLayout
 
 from ..constants import OUTPUTROOT, HEROES
-from ..helpers import LoadableWidget
+from ..helpers import LoadableWidget, Synchronisable
 from .teams import TeamWidget
 
 
 Builder.load_file(os.path.dirname(os.path.abspath(__file__)) + "/live.kv")
 
 
-class LiveManager(LoadableWidget, BoxLayout):
+class LiveManager(LoadableWidget, Synchronisable, BoxLayout):
+    # We use Synchronisable so MapManager can listen for teamselect changes.
+
     @classmethod
     def from_factory(cls, title="", herostyle="Portraits", herofilter=True,
                      team1={}, team2={}, **kwargs):
@@ -54,9 +56,10 @@ class LiveManager(LoadableWidget, BoxLayout):
             child.callback_herofilter()
 
     def callback_event(self, event):
-        # Realistically this can only be "teamset" but we should double check.
         if event == "teamset":
-            self.callback_teamset()
+            self.callback_teamset()  # We should recalc self.teamlist.
+        else:
+            super().callback_event(event)  # Else propagate up.
 
     # Called by TeamManager after we sync to it.
     def callback_teamset(self):
@@ -78,7 +81,7 @@ class LiveManager(LoadableWidget, BoxLayout):
         b = self.teamset.children[1].teamselect
         # `a, b = b, a` swaps values
         a.text, b.text = b.text, a.text
-        self.manager.mapmanager.callback_swap()  # Swap scores.
+        self.callback_event("swap")  # Swap scores.
 
     def __export__(self):
         return {
@@ -153,6 +156,7 @@ class LiveTeam(LoadableWidget, BoxLayout):
             if team is not None:
                 team.sync(self)
             self.team = team
+            self.manager.callback_event("teamchange")
             self.draw()
 
         # Name has changed; we got a callback. However, callback_event() will
@@ -168,6 +172,8 @@ class LiveTeam(LoadableWidget, BoxLayout):
 
     def callback_event(self, event):
         if event in self.PROPERTIES:
+            # Simulate a teamchange to cause redraw of map/match results.
+            self.manager.callback_event("teamchange")
             self.draw_property(event)
         elif event == "roster":
             self.draw_roster()

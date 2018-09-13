@@ -46,6 +46,7 @@ class MapManager(LoadableWidget, BoxLayout):
             current = self.mapset.children[current]
         self.setcurrentmap(current)
 
+        self.manager.livemanager.sync(self)  # Listen for teams/swap events.
         self.draw()
         return self
 
@@ -79,9 +80,9 @@ class MapManager(LoadableWidget, BoxLayout):
                 return
         self.setcurrentmap(None)
 
-    def callback_swap(self):
+    def swapteams(self):
         for child in self.mapset.children:
-            child.callback_swap()  # Swap map scores.
+            child.swapteams()  # Swap map scores.
 
         # Swap the attackers value. Use existing if lookup fails (no change).
         # This also applies if there's no currently attacking team (no switch).
@@ -89,6 +90,14 @@ class MapManager(LoadableWidget, BoxLayout):
         with suppress(KeyError):
             # EAFP means .get() is NOT preferred here.
             self.attackers.text = swap[self.attackers.text]
+
+    def callback_event(self, event):
+        if event == "swap":
+            self.swapteams()
+        elif event == "teamchange":
+            # Indirectly calls draw_liveresult() and draw_totalscore().
+            for child in self.mapset.children:
+                child.draw_result()
 
     def callback_mapstyle(self):
         for child in self.mapset.children:
@@ -325,8 +334,7 @@ class MapWidget(LoadableWidget, BoxLayout):
     # output; callback functions may call draw methods, but do not directly
     # output. Both callback and draw functions may have KVlang triggers.
 
-    def callback_swap(self):
-        # NOTE: This is called from the Live tab, not any internal actions.
+    def swapteams(self):
         # This will fire any callbacks as necessary (unless drawn, since no
         # change in values, but no redraw necessary in that instance).
         # `a, b = b, a` swaps values.
@@ -431,11 +439,14 @@ class MapWidget(LoadableWidget, BoxLayout):
             for team in (1, 2):
                 self.draw_score(team)  # Draw for all teams.
 
-        custom = target is not None
-        if not custom:
+        if target is None:
             # Formatted target becomes a format string accepting team only.
             target = "{}/map{}score{{team}}.txt".format(OUTPUTROOT,
                                                         self.index1)
+
+            if self.iscurrent:
+                # Current map and standard redraw? Call the live updater too.
+                self.manager.draw_livescore(team)
 
         # Team is 1 or 2, depending on which score value was changed.
         target = target.format(team=team)
@@ -443,9 +454,6 @@ class MapWidget(LoadableWidget, BoxLayout):
             text = getattr(self, "score{}".format(team))  # Input field.
             f.write(text_fmt(text.text))
 
-        # Standard call? Call the live updater.
-        if not custom and self.iscurrent:
-            self.manager.draw_livescore(team)
         if self.isfinal:
             self.draw_result()
 
@@ -456,8 +464,14 @@ class MapWidget(LoadableWidget, BoxLayout):
             color = "teamcolor.html"
             text = "result.txt"
 
-            # This is a standard call and we should call the live updater.
-            self.manager.draw_liveresult()
+            if self.iscurrent:
+                # This is a standard call and we should call the live updater.
+                self.manager.draw_liveresult()
+
+            # Changing result changes totals... a bit inefficient to place it
+            # here (ends up being called multiple times), but it does need to
+            # be called (at least once) when a map's result changes.
+            self.manager.draw_totalscore()
 
         # Fetch the winning team, if one exists from livemanager.
         team = None
@@ -497,8 +511,6 @@ class MapWidget(LoadableWidget, BoxLayout):
 
                     if data:
                         f.write(text_fmt(data))
-
-        self.manager.draw_totalscore()  # Changing the result changes totals.
 
     def draw(self):
         # Redraws all.
