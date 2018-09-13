@@ -9,6 +9,7 @@ from kivy.uix.boxlayout import BoxLayout
 from ..constants import MAPS, IMAGEROOT, OUTPUTROOT
 # NOTE: helpers also loads a kv file for widgets used.
 from ..helpers import LoadableWidget, filename_fmt, text_fmt, copyfile
+from .teams import TeamWidget
 
 
 Builder.load_file(os.path.dirname(os.path.abspath(__file__)) + "/maps.kv")
@@ -97,24 +98,24 @@ class MapManager(LoadableWidget, BoxLayout):
             self.draw_livemap()
 
     def draw_livepool(self):
-        target = "{}/livepool.png".format(OUTPUTROOT)
+        prefix = "{}/livepool.".format(OUTPUTROOT)
+        targets = ["png", "txt"]  # Suffixes.
         if self.current is not None:
-            self.current.draw_pool(target=target)
+            self.current.draw_pool(prefix, *targets)
         else:
-            with suppress(FileNotFoundError):
-                os.remove(target)
-            with suppress(FileNotFoundError):
-                os.remove(target[:-3] + "txt")
+            for i in targets:
+                with suppress(FileNotFoundError):
+                    os.remove(prefix + i)
 
     def draw_livemap(self):
-        target = "{}/livemap.png".format(OUTPUTROOT)
+        prefix = "{}/livemap.".format(OUTPUTROOT)
+        targets = ["png", "txt"]  # Suffixes.
         if self.current is not None:
-            self.current.draw_map(target=target)
+            self.current.draw_map(prefix, *targets)
         else:
-            with suppress(FileNotFoundError):
-                os.remove(target)
-            with suppress(FileNotFoundError):
-                os.remove(target[:-3] + "txt")
+            for i in targets:
+                with suppress(FileNotFoundError):
+                    os.remove(prefix + i)
 
     def draw_livescore(self, team=None):
         if team is None:
@@ -130,23 +131,59 @@ class MapManager(LoadableWidget, BoxLayout):
                 os.remove(target.format(team=team))
 
     def draw_liveresult(self):
-        target = "{}/liveresult.txt".format(OUTPUTROOT)
+        prefix = "{}/live".format(OUTPUTROOT)
+        targets = ["maplogo.png", "mapcolor.html", "result.txt"]  # Suffixes.
+
         if self.current is not None:
-            self.current.draw_result(target=target)
+            self.current.draw_result(prefix, *targets)
         else:
-            with suppress(FileNotFoundError):
-                os.remove(target)
+            # Skip second item as HTML cannot be removed.
+            for i in targets[::2]:
+                with suppress(FileNotFoundError):
+                    os.remove(prefix + i)
+            # Placeholder HTML to retain refresh rate.
+            TeamWidget.make_color(prefix + targets[1])
 
     def draw_totalscore(self):
+        prefix = "{}/live".format(OUTPUTROOT)
+
         teams = [0] * 3  # Each index represents that team (0 is draws)
         for child in self.mapset.children:
             teams[child.winner] += 1
         for team, wins in enumerate(teams):
             if not team:
                 continue  # Skip team "0" (draws).
-            target = "{}/livetotal{}.txt".format(OUTPUTROOT, team)
-            with open(target, 'w') as f:
+            target = "total{}.txt".format(team)
+            with open(prefix + target, 'w') as f:
                 f.write(text_fmt(wins))
+
+        # Get the team with the maximum score, then use that to draw winner.
+        team = None  # Winning team.
+        teams = teams[1:]  # Remove draws.
+        best = max(teams)
+        if teams.count(best) == 1:
+            # Only attempt to determine winner if there is a clear winner.
+            best = teams.index(best) + 1  # 1-indexed.
+            with suppress(IndexError):
+                # IndexError suppressed in case LiveTeam widget is missing.
+                # Children are in reverse order hence negative index.
+                team = self.manager.livemanager.teamset.children[-best].team
+
+        logo = prefix + "finallogo.png"
+        color = prefix + "finalcolor.html"
+        text = prefix + "finalresult.txt"
+        if team is not None:
+            team.draw_logo(logo)
+            team.draw_color(color)
+            team.draw_name(text)
+        else:
+            # Either no winner, or the winning team is not set in Live tab.
+            # Skip second item as HTML cannot be removed.
+            for i in [logo, text]:
+                with suppress(FileNotFoundError):
+                    os.remove(i)
+            # Placeholder HTML to retain refresh rate.
+            TeamWidget.make_color(color)
 
     def draw_positions(self):
         for team in (1, 2):
@@ -238,8 +275,8 @@ class MapWidget(LoadableWidget, BoxLayout):
 
     @property
     def iscurrent(self):
-        # Returning cached value ensures up-to-date even before final().
-        return self.cache_current
+        # Use switch value not cache, otherwise this is outdated for callbacks.
+        return self.current.active
 
     @iscurrent.setter
     def iscurrent(self, val):
@@ -248,12 +285,8 @@ class MapWidget(LoadableWidget, BoxLayout):
 
     @property
     def isfinal(self):
-        # Returning cached value ensures up-to-date even during factory.
-        # e.g. autocurrentmap() could pull the False value and set current,
-        # deactivating the final switch erroneously.
-        # (Anecdotally, callbacks don't seem to fire until *after* final(), so
-        # this may be a non-issue, but it doesn't hurt to safeguard.)
-        return self.cache_final
+        # Use switch value not cache, otherwise this is outdated for callbacks.
+        return self.final.active
 
     @isfinal.setter
     def isfinal(self, val):
@@ -342,50 +375,56 @@ class MapWidget(LoadableWidget, BoxLayout):
         if not old:
             self.draw_map()  # map.on_text won't fire (text didn't change).
 
-    def draw_pool(self, target=None):
-        custom = target is not None
-        if not custom:
-            target = "{}/map{}pool.png".format(OUTPUTROOT, self.index1)
+    def draw_pool(self, prefix=None, image=None, text=None):
+        if prefix is None:
+            # Set prefix and overwrite image/text fragments.
+            prefix = "{}/map{}pool.".format(OUTPUTROOT, self.index1)
+            image = "png"
+            text = "txt"
 
-        pool = filename_fmt(self.pool.text)
-        infile = "{}/game/modes/{}.png".format(IMAGEROOT, pool)
-        copyfile(infile, target)
+            if self.iscurrent:
+                # This is a standard call and we should call the live updater.
+                self.manager.draw_livepool()
 
-        # Replace png with txt and print out the name.
-        with open(target[:-3] + "txt", 'w') as f:
-            f.write(text_fmt(self.pool.text))
+        if image is not None:
+            pool = filename_fmt(self.pool.text)
+            infile = "{}/game/modes/{}.png".format(IMAGEROOT, pool)
+            copyfile(infile, prefix + image)
 
-        if not custom and self.iscurrent:
-            # This is a standard call and we should call the live updater.
-            self.manager.draw_livepool()
+        if text is not None:
+            with open(prefix + text, 'w') as f:
+                f.write(text_fmt(self.pool.text))
 
-    def draw_map(self, target=None):
-        custom = target is not None
-        if not custom:
-            target = "{}/map{}.png".format(OUTPUTROOT, self.index1)
+    def draw_map(self, prefix=None, image=None, text=None):
+        if prefix is None:
+            # Set prefix and overwrite image/text fragments.
+            prefix = "{}/map{}.".format(OUTPUTROOT, self.index1)
+            image = "png"
+            text = "txt"
 
-        # Set the map image to the correct image.
-        style = filename_fmt(self.manager.style)
-        if not self.iscurrent and style == "strips":
-            style += " desat"  # Only possible for "strips" at this time.
+            if self.iscurrent:
+                # This is a standard call and we should call the live updater.
+                self.manager.draw_livemap()
 
-        # Generate map name, or use the map pool.
-        map = filename_fmt(self.map.text)  # Map (image) name.
-        if not map:
-            # If no map, use the pool image instead.
-            # No map and no pool? No image (copyfile places "missing.png").
-            map = filename_fmt("_pool " + self.pool.text)
+        if image is not None:
+            # Set the map image to the correct image.
+            style = filename_fmt(self.manager.style)
+            if not self.iscurrent and style == "strips":
+                style += " desat"  # Only possible for "strips" at this time.
 
-        infile = "{}/maps/{}/{}.png".format(IMAGEROOT, style, map)
-        target = target.format(OUTPUTROOT, self.index1)
-        copyfile(infile, target, delete_if_missing=False)
+            # Generate map name, or use the map pool.
+            map = filename_fmt(self.map.text)  # Map (image) name.
+            if not map:
+                # If no map, use the pool image instead.
+                # No map and no pool? No image (copyfile places "missing.png").
+                map = filename_fmt("_pool " + self.pool.text)
 
-        with open(target[:-3] + "txt", 'w') as f:
-            f.write(text_fmt(self.map.text))
+            infile = "{}/maps/{}/{}.png".format(IMAGEROOT, style, map)
+            copyfile(infile, prefix + image, delete_if_missing=False)
 
-        if not custom and self.iscurrent:
-            # This is a standard call and we should call the live updater.
-            self.manager.draw_livemap()
+        if text is not None:
+            with open(prefix + text, 'w') as f:
+                f.write(text_fmt(self.map.text))
 
     def draw_score(self, team=None, target=None):
         if team is None:
@@ -410,23 +449,55 @@ class MapWidget(LoadableWidget, BoxLayout):
         if self.isfinal:
             self.draw_result()
 
-    def draw_result(self, target=None):
-        custom = target is not None
-        if not custom:
-            target = "{}/map{}result.txt".format(OUTPUTROOT, self.index1)
+    def draw_result(self, prefix=None, logo=None, color=None, text=None):
+        if prefix is None:
+            prefix = "{}/map{}".format(OUTPUTROOT, self.index1)
+            logo = "teamlogo.png"
+            color = "teamcolor.html"
+            text = "result.txt"
 
-        with open(target, 'w') as f:
-            # The file is now blank regardless, so if not final, write nothing.
-            if self.isfinal:
-                win = self.winner  # 0 draw (not incomplete), else team number.
-                if win != 0:
-                    f.write(text_fmt("Team {}".format(win)))
-                else:
-                    f.write(text_fmt("Draw!"))
-
-        if not custom and self.iscurrent:
             # This is a standard call and we should call the live updater.
             self.manager.draw_liveresult()
+
+        # Fetch the winning team, if one exists from livemanager.
+        team = None
+        if self.isfinal:
+            with suppress(IndexError):
+                # teamset.children is reversed, and self.winner is 1-indexed.
+                # IndexError suppressed in case LiveTeam widget is missing.
+                live = self.manager.manager.livemanager
+                team = live.teamset.children[-self.winner].team
+
+        if logo is not None:
+            if team is not None:
+                team.draw_logo(prefix + logo)
+            else:
+                with suppress(FileNotFoundError):
+                    os.remove(prefix + logo)
+
+        if color is not None:
+            if team is not None:
+                team.draw_color(prefix + color)
+            else:
+                # Placeholder HTML to retain refresh rate.
+                TeamWidget.make_color(prefix + color)
+
+        if text is not None:
+            with open(prefix + text, 'w') as f:
+                # The file is now truncated, if not final, write nothing.
+                if self.isfinal:
+                    data = ""
+                    if team is not None:
+                        data = team.name.text
+                    elif self.winner != 0:
+                        # We have a winner but no team.
+                        data = "Team {}".format(self.winner)
+                    else:
+                        data = "Draw"
+
+                    if data:
+                        f.write(text_fmt(data))
+
         self.manager.draw_totalscore()  # Changing the result changes totals.
 
     def draw(self):
