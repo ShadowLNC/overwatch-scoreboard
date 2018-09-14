@@ -67,7 +67,7 @@
             on_text: root.callback_event("color")
         Button:
             text: "Pick"
-        # ColorPicker:
+            on_press: root.callback_pickcolor()
     Button:
         text: "Edit Roster..."
         on_press: root.rosterview.open()
@@ -136,3 +136,18 @@
         on_text: root.callback_event("sr")
     DeleteWidget:
         on_press: root.callback_delete()
+
+<ColorDialog>:
+    picker: picker
+
+    size_hint: (0.8, 0.8)
+    title: "Select color..."
+    title_align: 'center'
+    BoxLayout:
+        orientation: 'vertical'
+        ColorPicker:
+            id: picker
+            # on_color: root.manager.callback_pickcolor(self.hex_color)
+        Button:
+            text: "Done"
+            on_press: root.dismiss()

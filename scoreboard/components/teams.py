@@ -1,5 +1,6 @@
 from contextlib import suppress
 import os
+import re
 
 from kivy.lang import Builder
 from kivy.uix.boxlayout import BoxLayout
@@ -45,7 +46,7 @@ class TeamManager(LoadableWidget, Synchronisable, BoxLayout):
 
 class TeamWidget(LoadableWidget, Synchronisable, BoxLayout):
     @classmethod
-    def from_factory(cls, name="", logo="", teamcolor="#ffffff", sr="",
+    def from_factory(cls, name="", logo="", teamcolor="#000000ff", sr="",
                      roster=[], **kwargs):
         self = super().from_factory(**kwargs)
 
@@ -84,6 +85,15 @@ class TeamWidget(LoadableWidget, Synchronisable, BoxLayout):
         if event == "name":
             # Necessary to update teamselect lists.
             self.manager.callback_event("teamset")
+
+    def callback_pickcolor(self, color=None):
+        if color is None:
+            # This is to display the dialog.
+            ColorDialog.from_factory(start=self.teamcolor.text,
+                                     parent=None, manager=self).open()
+        else:
+            # Dialog has closed.
+            self.teamcolor.text = color
 
     def draw_name(self, target):
         with open(target, 'w') as f:
@@ -209,3 +219,18 @@ class PlayerWidget(LoadableWidget, Synchronisable, BoxLayout):
             'sr': self.sr.text,
             'hero': self.hero,
         }
+
+
+class ColorDialog(LoadableWidget, Popup):
+    # Basic Popup to choose colour and return it to the manager afterwards.
+    @classmethod
+    def from_factory(cls, start="", **kwargs):
+        self = super().from_factory(**kwargs)
+        if not re.match("^#*[a-fA-F0-9]{5,}$", start):
+            # ColorPicker crashes if < 5 hex chars, so ensure valid value.
+            start = "#000000ff"
+        self.picker.hex_color = start
+        return self
+
+    def on_dismiss(self):
+        self.manager.callback_pickcolor(self.picker.hex_color)
