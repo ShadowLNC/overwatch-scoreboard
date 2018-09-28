@@ -86,6 +86,18 @@ class TeamWidget(LoadableWidget, Synchronisable, BoxLayout):
             # Necessary to update teamselect lists.
             self.manager.callback_event("teamset")
 
+    def callback_picklogo(self, file=None):
+        if file is None:
+            FileDialog.from_factory(start=self.logo.text,
+                                    manager=self, parent=None).open()
+        else:
+            with suppress(ValueError):
+                # ValueError when paths on different drives (Windows).
+                # Use a relative path if the target is a descendant.
+                if os.path.commonpath([file, os.getcwd()]):
+                    file = os.path.relpath(file)
+            self.logo.text = file
+
     def callback_pickcolor(self, color=None):
         if color is None:
             # This is to display the dialog.
@@ -219,6 +231,25 @@ class PlayerWidget(LoadableWidget, Synchronisable, BoxLayout):
             'sr': self.sr.text,
             'hero': self.hero,
         }
+
+
+class FileDialog(LoadableWidget, Popup):
+    @classmethod
+    def from_factory(cls, start="", **kwargs):
+        self = super().from_factory(**kwargs)
+        if os.path.exists(start):
+            # This still allows drive selection by entering "D:" etc.
+            # Apparently a relative path breaks the FileChooser.
+            self.picker.path = os.path.abspath(os.path.dirname(start))
+        else:
+            # cwd will usually be repository folder.
+            self.picker.path = os.getcwd()
+        return self
+
+    def submit(self):
+        if self.picker.selection:
+            self.manager.callback_picklogo(self.picker.selection[0])
+        self.dismiss()
 
 
 class ColorDialog(LoadableWidget, Popup):

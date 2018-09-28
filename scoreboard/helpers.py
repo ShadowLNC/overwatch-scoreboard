@@ -5,6 +5,7 @@ import shutil
 import unicodedata
 
 from kivy.lang import Builder
+from kivy.logger import Logger
 
 from .constants import IMAGEROOT
 
@@ -65,13 +66,22 @@ def copyfile(src, dest, delete_if_missing=True):
     # Prevent crashes by outputting a fallback if we can't get the file.
     try:
         shutil.copyfile(src, dest)
-    except FileNotFoundError:
+    except (FileNotFoundError, PermissionError) as e:
         # Either delete the image or default to a "missing" image.
+        Logger.warning("Helpers: " + str(e))
         if delete_if_missing:
-            with suppress(FileNotFoundError):
+            try:
                 os.remove(dest)
+            except PermissionError:
+                Logger.error("Helpers: Could not remove " + str(dest))
+            except FileNotFoundError:
+                pass  # Can't use suppress(), must log PermissionError.
         else:
             try:
                 shutil.copyfile(IMAGEROOT + "/missing.png", dest)
-            except FileNotFoundError:
-                open(dest, 'wb').close()  # Touch the target for empty file.
+            except (FileNotFoundError, PermissionError) as e:
+                try:
+                    Logger.warning("Helpers: " + str(e))
+                    open(dest, 'wb').close()  # Touch target for empty file.
+                except PermissionError:
+                    Logger.error("Helpers: Could not write " + str(dest))
