@@ -6,6 +6,8 @@ import unicodedata
 
 from kivy.lang import Builder
 from kivy.logger import Logger
+from kivy.uix.button import Button
+from kivy.uix.popup import Popup
 
 from .constants import IMAGEROOT
 
@@ -85,3 +87,24 @@ def copyfile(src, dest, delete_if_missing=True):
                     open(dest, 'wb').close()  # Touch target for empty file.
                 except PermissionError:
                     Logger.error("Helpers: Could not write " + str(dest))
+
+
+class DeleteWidget(Button):
+    def callback_press(self):
+        DeleteConfirmation(self.callback_target).open()
+
+
+class DeleteConfirmation(Popup):
+    def __init__(self, target_callback, **kwargs):
+        super().__init__(**kwargs)
+        self.target_callback = target_callback
+        self.live = False
+
+    def callback_open(self):
+        self.live = True
+
+    def callback_delete(self):
+        if self.live:
+            self.live = False  # Suppress multi-click/multi-call.
+            self.target_callback()  # Propagate.
+            self.dismiss()

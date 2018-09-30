@@ -3,8 +3,30 @@
     multiline: False
 
 
-<DeleteWidget@Button>:
+<DeleteWidget>:
     text: "del"
+    on_release: self.callback_press()
+
+
+<DeleteConfirmation>:
+    size_hint: (0.5, 0.5)
+    title: "Delete?"
+    title_align: 'center'
+    on_open: self.callback_open()
+
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: "Are you sure you want to delete this item?"
+        BoxLayout:
+            orientation: 'horizontal'
+            Button:
+                text: "Cancel"
+                on_release: root.dismiss()
+            Button:
+                background_color: (1, 0.4, 0.4, 1)
+                text: "Delete"
+                on_release: root.callback_delete()
 
 
 <DragHandleWidget@Label>:

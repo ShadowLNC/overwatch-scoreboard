@@ -28,7 +28,7 @@
         id: final
         on_active: root.callback_final(args[1])  # Send value only.
     DeleteWidget:
-        on_press: root.callback_delete()
+        callback_target: root.callback_delete
 
 
 <MapManager>:
@@ -79,4 +79,4 @@
                 on_text: root.callback_mapstyle()
         Button:
             text: "Add Map"
-            on_press: root.addmap()  # No args.
+            on_release: root.addmap()  # No args.

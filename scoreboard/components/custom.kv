@@ -18,7 +18,7 @@
         root: root
     Button:
         text: "Add Text Field"
-        on_press: root.add_new()
+        on_release: root.add_new()
 
 
 <CustomTextWidget@BoxLayout>:
@@ -35,7 +35,7 @@
         multiline: False
         on_text: root.draw()
     DeleteWidget:
-        on_press: root.callback_delete()
+        callback_target: root.callback_delete
 
 
 <FilenameDialog>:
@@ -65,7 +65,7 @@
             orientation: 'horizontal'
             Button:
                 text: "Cancel"
-                on_press: root.dismiss()  # Close this modal.
+                on_release: root.dismiss()  # Close this modal.
             Button:
                 text: "Add Entry"
-                on_press: root.confirm()
+                on_release: root.confirm()
