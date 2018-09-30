@@ -95,7 +95,7 @@ class MapManager(LoadableWidget, BoxLayout):
         if event == "swap":
             self.swapteams()
         elif event == "teamchange":
-            # Indirectly calls draw_liveresult() and draw_totalscore().
+            # Indirectly calls draw_result().
             for child in self.mapset.children:
                 child.draw_result()
 
@@ -107,7 +107,7 @@ class MapManager(LoadableWidget, BoxLayout):
             self.draw_livemap()
 
     def draw_livepool(self):
-        prefix = "{}/livepool.".format(OUTPUTROOT)
+        prefix = "{}/livemappool.".format(OUTPUTROOT)
         targets = ["png", "txt"]  # Suffixes.
         if self.current is not None:
             self.current.draw_pool(prefix, *targets)
@@ -132,29 +132,15 @@ class MapManager(LoadableWidget, BoxLayout):
                 self.draw_livescore(team)  # Draw for all teams.
 
         # Formatted target becomes a format string accepting team only.
-        target = "{}/livescore{{team}}.txt".format(OUTPUTROOT)
+        target = "{}/livemapscore{{team}}.txt".format(OUTPUTROOT)
         if self.current is not None:
             self.current.draw_score(team=team, target=target)
         else:
             with suppress(FileNotFoundError):
                 os.remove(target.format(team=team))
 
-    def draw_liveresult(self):
-        prefix = "{}/live".format(OUTPUTROOT)
-        targets = ["maplogo.png", "mapcolor.html", "result.txt"]  # Suffixes.
-
-        if self.current is not None:
-            self.current.draw_result(prefix, *targets)
-        else:
-            # Skip second item as HTML cannot be removed.
-            for i in targets[::2]:
-                with suppress(FileNotFoundError):
-                    os.remove(prefix + i)
-            # Placeholder HTML to retain refresh rate.
-            TeamWidget.make_color(prefix + targets[1])
-
-    def draw_totalscore(self):
-        prefix = "{}/live".format(OUTPUTROOT)
+    def draw_result(self):
+        prefix = "{}/match".format(OUTPUTROOT)
 
         teams = [0] * 3  # Each index represents that team (0 is draws)
         for child in self.mapset.children:
@@ -162,7 +148,7 @@ class MapManager(LoadableWidget, BoxLayout):
         for team, wins in enumerate(teams):
             if not team:
                 continue  # Skip team "0" (draws).
-            target = "total{}.txt".format(team)
+            target = "totalscore{}.txt".format(team)
             with open(prefix + target, 'w') as f:
                 f.write(text_fmt(wins))
 
@@ -178,9 +164,10 @@ class MapManager(LoadableWidget, BoxLayout):
                 # Children are in reverse order hence negative index.
                 team = self.manager.livemanager.teamset.children[-best].team
 
-        logo = prefix + "finallogo.png"
-        color = prefix + "finalcolor.html"
-        text = prefix + "finalresult.txt"
+        prefix += "winner"
+        logo = prefix + "logo.png"
+        color = prefix + "color.html"
+        text = prefix + "name.txt"
         if team is not None:
             team.draw_logo(logo)
             team.draw_color(color)
@@ -216,8 +203,7 @@ class MapManager(LoadableWidget, BoxLayout):
         self.draw_livepool()
         self.draw_livemap()
         self.draw_livescore()  # team=None causes all to redraw.
-        self.draw_liveresult()
-        self.draw_totalscore()
+        self.draw_result()
         self.draw_positions()
 
     def draw(self):
@@ -459,19 +445,15 @@ class MapWidget(LoadableWidget, BoxLayout):
 
     def draw_result(self, prefix=None, logo=None, color=None, text=None):
         if prefix is None:
-            prefix = "{}/map{}".format(OUTPUTROOT, self.index1)
-            logo = "teamlogo.png"
-            color = "teamcolor.html"
-            text = "result.txt"
-
-            if self.iscurrent:
-                # This is a standard call and we should call the live updater.
-                self.manager.draw_liveresult()
+            prefix = "{}/map{}winner".format(OUTPUTROOT, self.index1)
+            logo = "logo.png"
+            color = "color.html"
+            text = "name.txt"
 
             # Changing result changes totals... a bit inefficient to place it
             # here (ends up being called multiple times), but it does need to
             # be called (at least once) when a map's result changes.
-            self.manager.draw_totalscore()
+            self.manager.draw_result()
 
         # Fetch the winning team, if one exists from livemanager.
         team = None

@@ -112,8 +112,7 @@ class TeamWidget(LoadableWidget, Synchronisable, BoxLayout):
             f.write(text_fmt(self.name.text))
 
     def draw_logo(self, target):
-        # Will copy missing.png as necessary.
-        copyfile(self.logo.text, target)
+        copyfile(self.logo.text, target)  # Target deleted if logo missing.
 
     def draw_color(self, target):
         self.__class__.make_color(target, self.teamcolor.text)
