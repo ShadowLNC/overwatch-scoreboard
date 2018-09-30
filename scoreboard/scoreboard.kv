@@ -22,3 +22,21 @@
     TabbedPanelItem:
         text: "Teams"
         id: tabteams
+
+<ExitDialog>:
+    size_hint: (0.5, 0.5)
+    title: "Exit?"
+    title_align: 'center'
+
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: "Are you sure you want to exit?"
+        BoxLayout:
+            orientation: 'horizontal'
+            Button:
+                text: "Cancel"
+                on_press: root.dismiss()
+            Button:
+                text: "Exit"
+                on_press: root.exitfunc()

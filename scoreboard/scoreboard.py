@@ -2,8 +2,10 @@ import json
 import os
 
 import kivy.app
+from kivy.core.window import Window
+from kivy.lang import Builder
 from kivy.logger import Logger
-# from kivy.core.window import Window
+from kivy.uix.popup import Popup
 from kivy.uix.tabbedpanel import TabbedPanel
 
 from .constants import OUTPUTROOT, SAVEFILE
@@ -12,10 +14,6 @@ from .components.live import LiveManager
 from .components.maps import MapManager
 from .components.custom import CustomDataManager
 from .components.teams import TeamManager
-
-
-# TODO some modal confirmation... or none at all?
-# Window.bind(on_request_close=lambda *a, **kw: True)
 
 
 # Possible settings to add in future:
@@ -27,7 +25,15 @@ from .components.teams import TeamManager
 # Load custom saves/set custom savefile
 
 
+Builder.load_file(os.path.dirname(os.path.abspath(__file__)) +
+                  "/scoreboard.kv")
+
+
 class View(TabbedPanel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.ready = False  # Whether or not we can access all elements etc.
+
     @classmethod
     def from_save(cls):
         self = cls()
@@ -57,11 +63,14 @@ class View(TabbedPanel):
             **state.get('mapmanager', {}),
             parent=self.tabmaps, manager=self)
 
+        self.ready = True
+
         return self
 
     def save(self):
-        with open(SAVEFILE, 'w') as f:
-            json.dump(self.__export__(), f)
+        if self.ready:
+            with open(SAVEFILE, 'w') as f:
+                json.dump(self.__export__(), f)
 
     def __export__(self):
         return {
@@ -72,7 +81,14 @@ class View(TabbedPanel):
         }
 
 
-class Scoreboard(kivy.app.App):
+class ExitDialog(Popup):
+    def __init__(self, exitfunc, **kwargs):
+        super().__init__(**kwargs)
+        self.exitfunc = exitfunc
+
+
+# Previously Scoreboard, but kivy autoloads <classname>.kv which is undesired.
+class App(kivy.app.App):
     def build(self):
         return View.from_save()
 
@@ -83,6 +99,22 @@ if __name__ == '__main__':
         Logger.info("Scoreboard: Creating output folder...")
         os.makedirs(OUTPUTROOT + "/custom")  # Make all "prerequisites" too.
 
-    s = Scoreboard()
+    safetoexit = False
+
+    def doexit():
+        global safetoexit  # This is technically in global scope, not nonlocal.
+        safetoexit = True
+        Window.close()  # Request the close.
+
+    exitbox = ExitDialog(exitfunc=doexit)
+
+    def onexit(*args, **kwargs):
+        if not safetoexit:
+            exitbox.open()  # Multiple openings is a warning but not an error.
+            return True
+
+    Window.bind(on_request_close=onexit)
+
+    s = App()
     s.run()
     s.root.save()  # Until we have a save event bubble up.
