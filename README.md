@@ -39,12 +39,57 @@ The images package is released separately, and is subject to a separate licence
 
 # Usage
 
-The program will generate images and text files in the `output` folder.
+The program will generate files in the `output` folder. Files can be expected
+to be always available, except as specified.
 
 The `#` character in documentation filenames (below) is a placeholder and the
 the program will replace it for an appropriate number. For example, `map#.png`
 becomes `map1.png`, `map2.png`, and so on (for each map).
 
+
+### Team Information
+
+#### Output
+
+Team data is managed in the *Teams* tab.
+Teams 1 and 2 are selected from the *Live* tab, as are heroes.
+
+| Parameter | Data File | Notes |
+| --------- | --------- | ----- |
+| Team Name | `team#name.txt` | A |
+| Team Logo | `team#logo.png` | AB |
+| Team Colour | `team#color.html` | |
+| Team SR | `team#sr.txt` | A |
+| Player Username | `team#player#user.txt` | C |
+| Player Role Image | `team#player#role.png` | CD |
+| Player SR | `team#player#sr.txt` | C |
+| Player Hero Image | `team#player#hero.png` | CD |
+
+Additional files are provided:
+
+-   `livetitle.txt` holds the value of the title field in the *Live* tab.
+
+Notes:
+
+-   A) This file only exists if a team has been selected.
+-   B) This file only exists if the source image also exists (no placeholder).
+-   C) This file only exists if the player slot is filled (a team must be selected).
+-   D) This file will be removed if the value is empty.
+
+#### Interface and Behaviour
+
+-   If a team's SR is blank ("auto"), it is calculated from the SR entries of
+    players listed in the team roster (all of them, not just the playing 6).
+
+-   The "Hero Style" selector determines which kind of hero images are output.
+
+-   The "Filter by Role" switch, when enabled, limits hero selections to the
+    player's selected role (if "Flex" or no role is selected, no filter is
+    applied). Existing selections are not altered when this switch is toggled.
+
+-   A team should only be selected in one position at a time. Selecting the
+    same team multiple times may have unintended consequences (the behaviour is
+    undefined).
 
 ### Map Information
 
@@ -54,34 +99,32 @@ The *Live Map Data* file contains information about the currently playing map.
 It will be identical to the file for the relevant map.
 
 | Parameter | Data File | Live Map Data | Notes |
-| --------- | --------- | ------------- | ------------ |
-| Game Mode / Map Pool Name | `map#pool.txt` | `livemappool.txt` | AX |
-| Game Mode / Map Pool Image | `map#pool.png` | `livemappool.png` | AXY |
-| Map Name  | `map#.txt` | `livemap.txt` | AX |
-| Map Image | `map#.png` | `livemap.png` | AX |
-| Team Score (For Map) | `map#score#.txt` | `livemapscore#.png` | A |
-| Map Winner Team Name | `map#winnername.txt` | Does Not Exist | A |
-| Map Winner Team Logo | `map#winnerlogo.png` | Does Not Exist | BY |
-| Map Winner Team Colour | `map#winnercolor.html` | Does Not Exist | A |
+| --------- | --------- | ------------- | ----- |
+| Game Mode / Map Pool Name | `map#pool.txt` | `livemappool.txt` | A |
+| Game Mode / Map Pool Image | `map#pool.png` | `livemappool.png` | AB |
+| Map Name  | `map#.txt` | `livemap.txt` | A |
+| Map Image | `map#.png` | `livemap.png` | A |
+| Team Score (For Map) | `map#score#.txt` | `livemapscore#.png` | |
+| Map Winner Team Name | `map#winnername.txt` | Does Not Exist | |
+| Map Winner Team Logo | `map#winnerlogo.png` | Does Not Exist | BC |
+| Map Winner Team Colour | `map#winnercolor.html` | Does Not Exist | ||
 
 Additional files are provided:
 
--   `matchtotalscore#.txt` holds the number of maps won for each team. (A)
--   `matchwinnername.txt` holds the name of the match-winning team. (B)
--   `matchwinnerlogo.png` holds the logo of the match-winning team. (BY)
--   `matchwinnercolor.html` holds the colour of the match-winning team. (A)
--   `liveposition#.png` holds the attack/defence position for each team. (CY)
+-   `matchtotalscore#.txt` holds the number of maps won for each team.
+-   `matchwinnername.txt` holds the name of the match-winning team. (C)
+-   `matchwinnerlogo.png` holds the logo of the match-winning team. (BC)
+-   `matchwinnercolor.html` holds the colour of the match-winning team.
+-   `liveposition#.png` holds the attack/defence position for each team. (BD)
 
 Notes:
--   A) This file is always present.
--   B) This file only exists if a winner exists.
--   C) If no side is set to attack, this file will be removed.
--   X) Live map data is removed if there is no current map.
--   Y) If the source image is missing, this file will be removed (instead of a
-    placeholder supplied).
+-   A) Live map data is removed if there is no current map.
+-   B) This file only exists if the source image also exists (no placeholder).
+-   C) This file only exists if a winner exists.
+-   D) If no side is set to attack, this file will be removed.
 
 
-#### Interface & Behaviour
+#### Interface and Behaviour
 
 -   The "Map Style" selector determines which kind of map images are output.
 

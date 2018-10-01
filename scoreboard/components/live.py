@@ -198,13 +198,9 @@ class LiveTeam(LoadableWidget, BoxLayout):
             # If not str then this is gonna throw a TypeError trying to add.
             raise ValueError("Unknown property: " + property)
 
-        filename = property
-        if filename == "name":
-            filename = ""  # "name" is not used in the target filename.
-
         # The extension is txt by default but we need to specify when it's not.
         extensions = {"logo": "png", "color": "html"}
-        target = "{}/team{}{}.{}".format(OUTPUTROOT, self.index1, filename,
+        target = "{}/team{}{}.{}".format(OUTPUTROOT, self.index1, property,
                                          extensions.get(property, "txt"))
         if self.team is not None:
             call = getattr(self.team, "draw_" + property)
@@ -332,9 +328,9 @@ class LivePlayer(LoadableWidget, BoxLayout):
 
         # The extension is txt by default but we need to specify when it's not.
         extensions = {"role": "png", "hero": "png"}
-        target = "{}/team{}{}{}.{}".format(
-            # E.g. team1user1.txt (team number, property, player number).
-            OUTPUTROOT, self.manager.index1, property, self.index1,
+        target = "{}/team{}player{}{}.{}".format(
+            # E.g. team1player1user.txt (team number, player number, property).
+            OUTPUTROOT, self.manager.index1, self.index1, property,
             extensions.get(property, "txt"))
 
         if self.player is not None:
