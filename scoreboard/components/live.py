@@ -46,12 +46,15 @@ class LiveManager(LoadableWidget, Synchronisable, BoxLayout):
         # on_text fired on init is not a problem here (brief flicker).
         with open(OUTPUTROOT + "/livetitle.txt", 'w') as f:
             f.write(value)
+        self.save()  # Suppressed for Kivy #3588, main view ignores.
 
     def callback_herostyle(self):
+        self.save()
         for child in self.teamset.children:
             child.callback_herostyle()
 
     def callback_herofilter(self):
+        self.save()
         for child in self.teamset.children:
             child.callback_herofilter()
 
@@ -83,6 +86,9 @@ class LiveManager(LoadableWidget, Synchronisable, BoxLayout):
         a.text, b.text = b.text, a.text
         self.callback_event("swap")  # Swap scores.
 
+    def save(self):
+        self.manager.save()
+
     def __export__(self):
         return {
             'title': self.title.text,
@@ -104,7 +110,7 @@ class LiveTeam(LoadableWidget, BoxLayout):
         self.team = None
 
     @classmethod
-    def from_factory(cls, teamname="", title="Team", background=(0, 0, 0, 1),
+    def from_factory(cls, name="", title="Team", background=(0, 0, 0, 1),
                      **kwargs):
         self = super().from_factory(**kwargs)
 
@@ -112,7 +118,7 @@ class LiveTeam(LoadableWidget, BoxLayout):
         self.title.text = title
 
         # Setup the current team (name). This fires callback_teamselect.
-        self.teamselect.text = teamname
+        self.teamselect.text = name
         self.draw_teamselect()  # Draw now that we have set self.team.
         if self.team is None:
             self.draw()  # It won't draw otherwise (teamselect no change).
@@ -159,6 +165,7 @@ class LiveTeam(LoadableWidget, BoxLayout):
             self.manager.callback_event("teamchange")
             self.draw()
 
+        self.manager.save()  # The text value changed, which is how we store.
         # Name has changed; we got a callback. However, callback_event() will
         # also be fired, so an extra self.draw_property("name") is unnecessary.
 
@@ -227,7 +234,7 @@ class LiveTeam(LoadableWidget, BoxLayout):
 
     def __export__(self):
         return {
-            'teamname': self.teamselect.text,
+            'name': self.teamselect.text,
         }
 
 
@@ -279,6 +286,7 @@ class LivePlayer(LoadableWidget, BoxLayout):
         # text equal to the new player's hero (or if self.player is None).
         if self.player is not None and hero != self.player.hero:
             self.player.hero = hero
+            self.manager.manager.save()
             self.draw_property("hero")
 
     def draw_heroselect(self):

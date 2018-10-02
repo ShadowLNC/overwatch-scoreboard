@@ -37,6 +37,10 @@ class TeamManager(LoadableWidget, Synchronisable, BoxLayout):
         # fire on the TextInput instantiation anyway, due to Kivy bug #3588).
         # Since we ignore empty team names anyway, we do not rely on the bug.
         TeamWidget.from_factory(**data, parent=self.teamset, manager=self)
+        # No need to self.save() here as Kivy #3588 fires the TextInput change.
+
+    def save(self):
+        self.manager.save()
 
     def __export__(self):
         return {
@@ -77,10 +81,12 @@ class TeamWidget(LoadableWidget, Synchronisable, BoxLayout):
 
     def callback_delete(self):
         self.parent.remove_widget(self)
+        self.manager.save()
         self.manager.callback_event("teamset")
 
     def callback_event(self, event):
         super().callback_event(event)
+        self.manager.save()  # callback_events are for modified properties.
 
         if event == "name":
             # Necessary to update teamselect lists.
@@ -158,9 +164,17 @@ class RosterWidget(LoadableWidget, Popup):
         # Instantiate from args - widget inherits LoadableWidget self-adding.
         PlayerWidget.from_factory(**data, parent=self.playerset, manager=self)
         self.manager.callback_event("roster")
+        # No need for save() here as Kivy #3588 fires TextInput change.
 
 
 class PlayerWidget(LoadableWidget, Synchronisable, BoxLayout):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Must define this first as Kivy #3588 triggers save indirectly.
+        # If the property doesn't exist, save cannot proceed.
+        self.hero = ""
+
     @classmethod
     def from_factory(cls, battletag="", role="Flex", sr="", hero="", **kwargs):
         self = super().from_factory(**kwargs)
@@ -191,12 +205,14 @@ class PlayerWidget(LoadableWidget, Synchronisable, BoxLayout):
 
     def callback_delete(self):
         self.parent.remove_widget(self)
+        self.save()
         self.manager.manager.callback_event("roster")
 
     def callback_event(self, event):
         super().callback_event(event)
+        self.save()  # callback_events are data changes.
 
-        if not self.manager.manager.sr.text:
+        if event == "sr" and not self.manager.manager.sr.text:
             self.manager.manager.callback_event("sr")  # Recalc auto team SR.
 
     def draw_user(self, target, full=False):
@@ -222,6 +238,10 @@ class PlayerWidget(LoadableWidget, Synchronisable, BoxLayout):
 
     def draw_hero(self, target, style="Portraits"):
         self.__class__.make_hero(target, self.hero, style)
+
+    def save(self):
+        # self > RosterWidget > TeamWidget > TeamManager.
+        self.manager.manager.manager.save()
 
     def __export__(self):
         return {

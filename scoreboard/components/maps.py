@@ -58,6 +58,7 @@ class MapManager(LoadableWidget, BoxLayout):
         # Instantiate from args - widget inherits LoadableWidget self-adding.
         MapWidget.from_factory(**data, parent=self.mapset, manager=self)
         self.autocurrentmap()
+        self.save()  # NOTE: Kivy #3588 may have caused premature save.
 
     def setcurrentmap(self, map):
         Logger.debug("Maps: Setting map {} current (was {})".format(
@@ -81,6 +82,7 @@ class MapManager(LoadableWidget, BoxLayout):
         self.setcurrentmap(None)
 
     def swapteams(self):
+        # The individual TextInput changes will trigger save().
         for child in self.mapset.children:
             child.swapteams()  # Swap map scores.
 
@@ -100,6 +102,7 @@ class MapManager(LoadableWidget, BoxLayout):
                 child.draw_result()
 
     def callback_mapstyle(self):
+        self.save()
         for child in self.mapset.children:
             child.draw_map()
         # draw_livemap is called from child.draw_map() unless current is None.
@@ -217,6 +220,9 @@ class MapManager(LoadableWidget, BoxLayout):
             check = re.match(r"^map(\d+)\D.*", file)
             if check and int(check[1]) > len(self.mapset.children):
                 os.remove("{}/{}".format(OUTPUTROOT, file))
+
+    def save(self):
+        self.manager.save()
 
     def __export__(self):
         # mapset.children is a stack, so we have to reverse for export.
@@ -342,6 +348,7 @@ class MapWidget(LoadableWidget, BoxLayout):
         self.manager.setcurrentmap(self if on else None)
         if on and self.isfinal:
             self.isfinal = False
+        self.manager.save()  # Save after all values set.
 
     def callback_final(self, on):
         self.draw_result()  # Needed to trigger updates for manager totals.
@@ -353,13 +360,13 @@ class MapWidget(LoadableWidget, BoxLayout):
         self.cache_final = on  # Update the cached value to match final.
 
         self.manager.autocurrentmap()  # Need to update current switch.
+        self.manager.save()  # Save after all values set.
 
     def callback_delete(self):
-        # TODO Some modal here.
-        manager = self.manager  # Keep reference after deletion.
         self.parent.remove_widget(self)
-        manager.autocurrentmap()
-        manager.draw()  # Clean up.
+        self.manager.autocurrentmap()
+        self.manager.save()
+        self.manager.draw()  # Clean up.
 
     def callback_pool(self, pool):
         self.map.values = MAPS[pool]
@@ -367,7 +374,9 @@ class MapWidget(LoadableWidget, BoxLayout):
         self.map.text = ""
         self.draw_pool()
         if not old:
-            self.draw_map()  # map.on_text won't fire (text didn't change).
+            # map.on_text won't fire (text didn't change).
+            self.manager.save()
+            self.draw_map()
 
     def draw_pool(self, prefix=None, image=None, text=None):
         if prefix is None:

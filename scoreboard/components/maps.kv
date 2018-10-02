@@ -17,12 +17,15 @@
         on_text: root.callback_pool(args[1])  # Send value only.
     Spinner:
         id: map
+        on_text: root.manager.save()  # No dedicated callback just for 2 lines.
         on_text: root.draw_map()  # No value; multipurpose listener.
     IntInput:
         id: score1
+        on_text: root.manager.save()  # No dedicated callback just for 2 lines.
         on_text: root.draw_score(1)
     IntInput:
         id: score2
+        on_text: root.manager.save()  # No dedicated callback just for 2 lines.
         on_text: root.draw_score(2)
     Switch:
         id: final
@@ -68,6 +71,7 @@
             Spinner:
                 id: attackers
                 values: ("", "Team 1", "Team 2")
+                on_text: root.save()  # No dedicated callback just for 2 lines.
                 on_text: root.draw_positions()
         BoxLayout:
             orientation: 'vertical'

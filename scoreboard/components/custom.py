@@ -54,6 +54,9 @@ class CustomDataManager(LoadableWidget, BoxLayout):
             if f not in files:
                 os.remove(OUTPUTROOT + "/custom/" + f)
 
+    def save(self):
+        self.manager.save()
+
     def __export__(self):
         return {
             'entries': [i.__export__() for i in
@@ -115,16 +118,16 @@ class CustomTextWidget(LoadableWidget, BoxLayout):
         return self
 
     def callback_delete(self):
-        manager = self.manager  # Retain reference.
         self.parent.remove_widget(self)
-        manager.clean()  # Cleanup.
+        self.manager.save()
+        self.manager.clean()  # Cleanup.
 
     def draw(self):
-        if not self.instantiation_complete:
+        if self.instantiation_complete:
             # Workaround for Kivy #3588 TextInput on_text fired on init.
-            return
-        with open(OUTPUTROOT + "/custom/" + self.file.text, 'w') as f:
-            f.write(text_fmt(self.data.text))
+            with open(OUTPUTROOT + "/custom/" + self.file.text, 'w') as f:
+                f.write(text_fmt(self.data.text))
+            self.manager.save()
 
     def __export__(self):
         return {
