@@ -1,0 +1,370 @@
+<head>
+  <style>
+    body {
+      margin: 0px auto;
+      overflow: hidden;
+    }
+
+    @font-face {
+      font-family: 'BNT';
+      src: url("fonts/big_noodle_titling.ttf") format('TrueType');
+    }
+
+    @font-face {
+      font-family: 'Spa';
+      src: url("fonts/SpartanMB-Bold.otf") format('OpenType');
+    }
+
+
+    div {
+      -webkit-animation-timing-function: ease-out;
+    }
+
+    @-webkit-keyframes leftmove {
+      from {
+        left: -3840px;
+      }
+
+      to {
+        left: 0px;
+      }
+    }
+
+    @keyframes topmove {
+      0% {
+        top: -150px;
+      }
+
+      100% {
+        top: 0px;
+      }
+    }
+
+    @keyframes bottommove {
+      0% {
+        top: 1080px;
+      }
+
+      100% {
+        top: 850px;
+      }
+    }
+
+    div.top {
+      animation: topmove 1.34s;
+      animation-fill-mode: backwards;
+      animation-delay: 0.66s;
+    }
+
+    div.bottom {
+      animation: bottommove 2s;
+      animation-fill-mode: backwards;
+      animation-delay: 0.66s;
+    }
+
+    div.hero1 {
+      animation: leftmove 1.5s;
+      animation-fill-mode: backwards;
+      animation-delay: 0.0s;
+    }
+
+    div.hero2 {
+      animation: leftmove 1.5s;
+      animation-fill-mode: backwards;
+      animation-delay: 0.1s;
+    }
+
+    div.hero3 {
+      animation: leftmove 1.5s;
+      animation-fill-mode: backwards;
+      animation-delay: 0.2s;
+    }
+
+    div.hero4 {
+      animation: leftmove 1.5s;
+      animation-fill-mode: backwards;
+      animation-delay: 0.3s;
+    }
+
+    div.hero5 {
+      animation: leftmove 1.5s;
+      animation-fill-mode: backwards;
+      animation-delay: 0.4s;
+    }
+
+    div.hero6 {
+      animation: leftmove 1.5s;
+      animation-fill-mode: backwards;
+      animation-delay: 0.5s;
+    }
+
+
+    div.hero1,
+    div.hero2,
+    div.hero3,
+    div.hero4,
+    div.hero5,
+    div.hero6 {
+      width: 1920px;
+      height: 850px;
+      left: 0px;
+      top: 35px;
+      border: 0px solid black;
+      vertical-align: middle;
+      background-position: center;
+      background-size: contain;
+      background-repeat: no-repeat;
+      position: absolute;
+    }
+
+
+    div.top {
+      position: absolute;
+      top: 0px;
+      left: 0px;
+      width: 1920px;
+      height: 150px;
+      background-color: #27AAE1;
+      background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.3), rgba(127, 127, 127, 0), rgba(0, 0, 0, 0.3));
+    }
+
+    div.top span.org {
+      width: 130px;
+      height: 130px;
+      position: absolute;
+      top: 10px;
+      right: 60px;
+      background-position: center;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-image: url("assets/org/org.png");
+    }
+
+    div.top span.logo {
+      width: 250px;
+      height: 150px;
+      position: absolute;
+      top: 0px;
+      left: 50px;
+      background-position: center;
+      background-size: 100% auto;
+      background-repeat: no-repeat;
+    }
+
+    span.teamname {
+      margin: 0;
+      position: absolute;
+      top: 0px;
+      left: 350px;
+      font-family: 'BNT';
+      text-transform: uppercase;
+      color: white;
+      text-shadow: 0px 0px 15px #000000;
+      font-size: 8.2em;
+      transform: skewX(-15deg);
+    }
+
+    div.bottom {
+      position: absolute;
+      top: 850px;
+      left: 0px;
+      width: 100%;
+      height: 230px;
+      background-color: #27AAE1;
+      background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.3), rgba(127, 127, 127, 0), rgba(0, 0, 0, 0.3));
+      vertical-align: middle;
+    }
+
+    div.bottom div {
+      width: 300px;
+      text-align: center;
+      margin: 0;
+      font-family: 'Spa';
+      text-transform: uppercase;
+      color: white;
+      text-shadow: 0px 0px 7px #000000;
+      font-size: 2em;
+      position: absolute;
+      top: 22px;
+      transform: translate(-50%, 0%);
+    }
+
+    div.bottom div.player1 {
+      left: 210px;
+    }
+
+    div.bottom div.player2 {
+      left: 510px;
+    }
+
+    div.bottom div.player3 {
+      left: 810px;
+    }
+
+    div.bottom div.player4 {
+      left: 1110px;
+    }
+
+    div.bottom div.player5 {
+      left: 1410px;
+    }
+
+    div.bottom div.player6 {
+      left: 1710px;
+    }
+
+    div.bottom div div {
+      width: 300px;
+      height: 110px;
+      background-position: center;
+      background-size: contain;
+      background-repeat: no-repeat;
+      transform: translate(0, 45px);
+    }
+
+    div.hero1 {
+      transform: translate(-750px);
+    }
+
+    div.hero2 {
+      transform: translate(-450px);
+    }
+
+    div.hero3 {
+      transform: translate(-150px);
+    }
+
+    div.hero4 {
+      transform: translate(150px);
+    }
+
+    div.hero5 {
+      transform: translate(450px);
+    }
+
+    div.hero6 {
+      transform: translate(750px);
+    }
+  </style>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script>
+    function update(json) {
+      console.log(json);
+      $("#json").text(JSON.stringify(json, null, 2)); // spacing level = 2
+
+      let team1 = null;
+      let team2 = null;
+      for (let team of json.teammanager.teams) {
+        if (team1 == null && team.name == json.livemanager.team1.name) {
+          team1 = team;
+          for (let i = 0; i < 6; ++i) {
+            let player = team1.roster[i];
+            $("#team1player" + (i + 1) + "battletag").text(player.battletag);
+            $("#team1player" + (i + 1) + "role").css("background-image", "url(\"../assets/game/roles/" + player.role + ".png\")");
+            $("#team1player" + (i + 1) + "hero").css("background-image", "url(\"../assets/heroes/portraits/" + player.hero.replace("\u00fa", "u").replace("\u00f6", "o").replace(":", "") + ".png\")");
+          }
+        }
+        if (team2 == null && team.name == json.livemanager.team2.name) {
+          team2 = team;
+        }
+      }
+      $("#matchtext").text(json.livemanager.title);
+
+      $("#team1name").text(team1 == null ? "Team 1" : team1.name);
+      $("#team2name").text(team2 == null ? "Team 2" : team2.name);
+
+      $("#team1color").css("background-color", team1 == null ? "#27AAE1FF" : team1.teamcolor);
+      $("#team1colorbottom").css("background-color", team1 == null ? "#27AAE1FF" : team1.teamcolor);
+
+      $("#team1logo").css("background-image", "url(\"../" + (team1 == null ? "" : team1.logo.replace("\\", "/").replace("\"", "\\\"")) + "\")");
+      $("#team2logo").css("background-image", "url(\"../" + (team2 == null ? "" : team2.logo.replace("\\", "/").replace("\"", "\\\"")) + "\")");
+
+      let current = null;
+      // The current ID is a negative index due to the way Python manages it.
+      let mapcount = json.mapmanager.mapset.length;
+      if (json.mapmanager.current != null && json.mapmanager.current < mapcount) {
+        // Subtract 1 for negative index.
+        current = json.mapmanager.mapset[mapcount - 1 - json.mapmanager.current];
+      }
+      sums = [0, 0, 0]
+      for (let map of json.mapmanager.mapset) {
+        a = map.score1
+        b = map.score2
+        if (a == NaN) {
+          a = 0;
+        }
+        if (b == NaN) {
+          b = 0;
+        }
+
+        if (!map.final) {
+          // Do nothing
+        } else if (a > b) {
+          sums[1]++;
+        } else if (a < b) {
+          sums[2]++;
+        } else {
+          sums[0]++;
+        }
+      }
+
+      $("#team1score").text(sums[1].toString());
+      $("#team2score").text(sums[2].toString());
+      // These are for the current map scores only.
+      //$("#team1score").text(current == null ? "" : current.score1);
+      //$("#team2score").text(current == null ? "" : current.score2);
+    }
+
+    function interval() {
+      $.getJSON("../save.json").done(update).fail((err) => {
+        console.log(err);
+      });
+    }
+    $(() => {
+      interval();
+      setInterval(interval, 200);
+    });
+  </script>
+</head>
+
+<body>
+  <div class="hero1" id="team1player1hero"></div>
+  <div class="hero2" id="team1player2hero"></div>
+  <div class="hero3" id="team1player3hero"></div>
+  <div class="hero4" id="team1player4hero"></div>
+  <div class="hero5" id="team1player5hero"></div>
+  <div class="hero6" id="team1player6hero"></div>
+
+  <div class="top" id="team1color">
+    <span class="logo" id="team1logo"></span>
+    <span class="teamname" id="team1name"></span>
+    <span class="org"></span>
+  </div>
+
+  <div class="bottom" id="team1colorbottom">
+    <div class="player1">
+      <div class="playertype" id="team1player1role"></div>
+      <span id="team1player1battletag"></span>
+    </div>
+    <div class="player2">
+      <div class="playertype" id="team1player2role"></div>
+      <span id="team1player2battletag"></span>
+    </div>
+    <div class="player3">
+      <div class="playertype" id="team1player3role"></div>
+      <span id="team1player3battletag"></span>
+    </div>
+    <div class="player4">
+      <div class="playertype" id="team1player4role"></div>
+      <span id="team1player4battletag"></span>
+    </div>
+    <div class="player5">
+      <div class="playertype" id="team1player5role"></div>
+      <span id="team1player5battletag"></span>
+    </div>
+    <div class="player6">
+      <div class="playertype" id="team1player6role"></div>
+      <span id="team1player6battletag"></span>
+    </div>
+  </div>
+</body>

@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <style>
+    div.left {
+      background-color: #27AAE1;
+    }
+
+    div.right {
+      background-color: #C80013;
+    }
+
+    /* OVERWATCH COLOURS - EXCLUSIVE TO PTR RIGHT NOW
+
+#C80013		Red (Enemy Default)
+#D45800		Tawny
+#D47900		Orange
+#FFD700		Gold
+#FFFF00		Yellow
+#CCFF00		Lime Green
+#00AB84		Green
+#00FFFF		Neon Blue
+#27AAE1		Blue (Friendly Default)
+#800080		Purple
+#523FFF		Aqua
+#FF00FF		Magenta
+#FF6EC7		Pink
+
+*/
+
+    @font-face {
+      font-family: 'BNT';
+      src: url("fonts/big_noodle_titling-webfont.woff") format('woff');
+    }
+
+    @font-face {
+      font-family: 'Spa';
+      src: url("fonts/SpartanMB-Bold.otf") format('OpenType');
+    }
+
+    div {
+      -webkit-animation-timing-function: ease-out;
+    }
+
+    div.left {
+      animation: leftmove 2s;
+    }
+
+    div.right {
+      animation: rightmove 2s;
+    }
+
+    div.center {
+      animation: topmove 1s;
+    }
+
+    @-webkit-keyframes leftmove {
+      0% {
+        left: -1250px;
+      }
+
+      60% {
+        left: -1250px;
+      }
+
+      100% {
+        left: -145px;
+      }
+    }
+
+    @-webkit-keyframes rightmove {
+      0% {
+        right: -1250px;
+      }
+
+      60% {
+        right: -1250px;
+      }
+
+      100% {
+        right: -145px;
+      }
+    }
+
+    @keyframes topmove {
+      0% {
+        top: -46px;
+      }
+
+      50% {
+        top: -46px;
+      }
+
+      100% {
+        top: 0px;
+      }
+    }
+
+
+    div.left,
+    div.right {
+      width: 1106px;
+      height: 1080px;
+      border: 0px solid black;
+      vertical-align: middle;
+      background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0), rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.4));
+    }
+
+
+    div.center {
+      width: 100%;
+      height: 46px;
+      border: 0px solid black;
+      vertical-align: middle;
+      background-color: rgba(0, 0, 0, 0.5);
+      background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.2));
+      position: fixed;
+      left: 0px;
+      top: 0px;
+    }
+
+    span {
+      margin: 0;
+      position: absolute;
+      top: 50%;
+      font-family: 'Spa';
+      color: white;
+    }
+
+    span.teamname {
+      font-size: 2.5em;
+    }
+
+    span.score {
+      font-size: 12em;
+      text-shadow: 0px 0px 20px #000000;
+    }
+
+    div.left span.teamname {
+      right: 0px;
+      transform: translate(-190px, -50%);
+    }
+
+    div.center span.teamname {
+      width: 100%;
+      text-align: center;
+      transform: translate(0%, -50%);
+      font-size: 2em;
+    }
+
+    div.left span.score {
+      width: 200px;
+      text-align: center;
+      right: 0px;
+      transform: translate(0%, -50%);
+    }
+
+    div.right span.teamname {
+      left: 0px;
+      transform: translate(190px, -50%);
+    }
+
+    div.left {
+      position: fixed;
+      left: -145px;
+      top: 0px;
+    }
+
+    div.left span.logo {
+      width: 700px;
+      height: 700px;
+      right: 200px;
+      transform: translate(00px, -50%);
+      background-position: center;
+      background-size: contain;
+      background-repeat: no-repeat;
+    }
+
+    div.left span.logoshade {
+      width: 120px;
+      height: 46px;
+      right: 0px;
+      transform: translate(-60px, -50%);
+      background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.2));
+      clip-path: polygon(12px 0,
+        120px 0,
+        108px 100%,
+        0 100%);
+    }
+
+    div.right span.logo {
+      width: 700px;
+      height: 700px;
+      left: 200px;
+      transform: translate(0px, -50%);
+      background-position: center;
+      background-size: contain;
+      background-repeat: no-repeat;
+    }
+
+    div.right span.logoshade {
+      width: 120px;
+      height: 46px;
+      left: 0px;
+      transform: translate(60px, -50%);
+      background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.2));
+      clip-path: polygon(0px 0,
+        108px 0,
+        120px 100%,
+        12px 100%);
+    }
+
+    div.right span.score {
+      width: 200px;
+      text-align: center;
+      left: 0px;
+      transform: translate(0%, -50%);
+    }
+
+    div.right {
+      position: fixed;
+      right: -145px;
+      top: 0px;
+    }
+  </style>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script>
+    function update(json) {
+      console.log(json);
+      $("#json").text(JSON.stringify(json, null, 2)); // spacing level = 2
+
+      let team1 = null;
+      let team2 = null;
+      for (let team of json.teammanager.teams) {
+        if (team1 == null && team.name == json.livemanager.team1.name) {
+          team1 = team;
+        }
+        if (team2 == null && team.name == json.livemanager.team2.name) {
+          team2 = team;
+        }
+      }
+      $("#matchtext").text(json.livemanager.title);
+
+      $("#team1name").text(team1 == null ? "Team 1" : team1.name);
+      $("#team2name").text(team2 == null ? "Team 2" : team2.name);
+
+      $("#team1color").css("background-color", team1 == null ? "#27AAE1FF" : team1.teamcolor);
+      $("#team2color").css("background-color", team2 == null ? "#C80013FF" : team2.teamcolor);
+
+      $("#team1logo").css("background-image", "url(\"../" + (team1 == null ? "" : team1.logo.replace("\\", "/").replace("\"", "\\\"")) + "\")");
+      $("#team2logo").css("background-image", "url(\"../" + (team2 == null ? "" : team2.logo.replace("\\", "/").replace("\"", "\\\"")) + "\")");
+
+      let current = null;
+      // The current ID is a negative index due to the way Python manages it.
+      let mapcount = json.mapmanager.mapset.length;
+      if (json.mapmanager.current != null && json.mapmanager.current < mapcount) {
+        // Subtract 1 for negative index.
+        current = json.mapmanager.mapset[mapcount - 1 - json.mapmanager.current];
+      }
+      sums = [0, 0, 0]
+      for (let map of json.mapmanager.mapset) {
+        a = map.score1
+        b = map.score2
+        if (a == NaN) {
+          a = 0;
+        }
+        if (b == NaN) {
+          b = 0;
+        }
+
+        if (!map.final) {
+          // Do nothing
+        } else if (a > b) {
+          sums[1]++;
+        } else if (a < b) {
+          sums[2]++;
+        } else {
+          sums[0]++;
+        }
+      }
+
+      $("#team1score").text(sums[1].toString());
+      $("#team2score").text(sums[2].toString());
+      // These are for the current map scores only.
+      //$("#team1score").text(current == null ? "" : current.score1);
+      //$("#team2score").text(current == null ? "" : current.score2);
+    }
+
+    function interval() {
+      $.getJSON("../save.json").done(update).fail((err) => {
+        console.log(err);
+      });
+    }
+    $(() => {
+      interval();
+      setInterval(interval, 200);
+    });
+  </script>
+</head>
+
+<body>
+  <div class="left" id="team1color">
+    <span class="logo" id="team1logo"></span>
+    <span class="score" id="team1score"></span>
+  </div>
+
+  <div class="right" id="team2color">
+    <span class="logo" id="team2logo"></span>
+    <span class="score" id="team2score"></span>
+  </div>
+
+</body>
+
+</html>
