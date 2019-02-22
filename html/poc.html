@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Proof of Concept LiveUpdater</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script>
+        var cachestate;
+        cachestate = {};
+        function update(json) {
+            //console.log(json);
+            $("#json").text(JSON.stringify(json, null, 2)); // spacing level = 2
+            //console.log(cachestate == json);
+            //cachestate = json;
+
+            let team1 = null;
+            let team2 = null;
+            for (let team of json.teammanager.teams) {
+                if (team1 == null && team.name == json.livemanager.team1.name) {
+                    team1 = team;
+                }
+                if (team2 == null && team.name == json.livemanager.team2.name) {
+                    team2 = team;
+                }
+            }
+
+            $("#team1name").text(team1 == null ? "Team 1" : team1.name);
+            $("#team2name").text(team2 == null ? "Team 2" : team2.name);
+
+            $("#team1name").css("background-color", team1 == null ? "#ffffffff" : team1.teamcolor);
+            $("#team2name").css("background-color", team2 == null ? "#ffffffff" : team2.teamcolor);
+
+            $("#team1logo").css("background-image", "url(\"/" + (team1 == null ? "" : team1.logo.replace("\\", "/").replace("\"", "\\\"")) + "\")");
+            $("#team2logo").css("background-image", "url(\"/" + (team2 == null ? "" : team2.logo.replace("\\", "/").replace("\"", "\\\"")) + "\")");
+            //$("#team1logo").prop("src", team1 == null ? "" : team1.logo.replace("\\", "/"));
+            //$("#team2logo").prop("src", team2 == null ? "" : team2.logo.replace("\\", "/"));
+
+            let current = null;
+            // The current ID is a negative index due to the way Python manages it.
+            let mapcount = json.mapmanager.mapset.length;
+            if (json.mapmanager.current != null && json.mapmanager.current < mapcount) {
+                // Subtract 1 for negative index.
+                current = json.mapmanager.mapset[mapcount - 1 - json.mapmanager.current];
+            }
+            sums = [0, 0, 0]
+            for (let map of json.mapmanager.mapset) {
+                a = map.score1
+                b = map.score2
+                if (a == NaN) {
+                    a = 0;
+                }
+                if (b == NaN) {
+                    b = 0;
+                }
+
+                if (!map.final) {
+                    // Do nothing
+                }
+                else if (a > b) {
+                    ++sums[1];
+                }
+                else if (a < b) {
+                    ++sums[2];
+                }
+                else {
+                    ++sums[0];
+                }
+            }
+
+            $("#team1score").text(sums[1].toString());
+            $("#team2score").text(sums[2].toString());
+            // These are for the current map scores only.
+            //$("#team1score").text(current == null ? "" : current.score1);
+            //$("#team2score").text(current == null ? "" : current.score2);
+
+        }
+        function interval() {
+            $.getJSON("/save.json").done(update).fail((err) => {console.log(err);});
+        }
+        $(() => {
+            interval();
+            setInterval(interval, 200);
+        });
+    </script>
+</head>
+<body>
+    <pre id="json" style="display:none;"></pre>
+
+    <div style="width:50%">
+        <div id="team1name"></div>
+        <div id="team1logo" style="width:5em; height:5em;">aaaa</div>
+        <div id="team1score"></div>
+
+    </div>
+    <div style="width:50%">
+        <div id="team2name"></div>
+        <div id="team2logo">aaaa</div>
+        <div id="team2score"></div>
+
+    </div>
+</body>
