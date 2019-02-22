@@ -5,6 +5,7 @@ SAVEFILE = "save.json"
 # For all heroes, use sorted(sum(HEROES.values(), [])).
 HEROES = {
     'Damage': [
+        'Ashe',
         'Bastion',
         'Doomfist',
         'Genji',
@@ -45,6 +46,9 @@ HEROES = {
 MAPS = {
 
     'extendedcontrol': [
+        'Busan Downtown',
+        'Busan Sanctuary',
+        'Busan MEKA Base',
         'Ilios Lighthouse',
         'Ilios Ruins',
         'Ilios Well',
@@ -62,6 +66,7 @@ MAPS = {
     'Assault': [
         'Hanamura',
         'Horizon Lunar Colony',
+        'Paris',
         'Temple of Anubis',
         'Volskaya Industries',
     ],
@@ -83,6 +88,7 @@ MAPS = {
     ],
 
     'Control': [
+        'Busan',
         'Ilios',
         'Lijiang Tower',
         'Nepal',
