@@ -2,9 +2,6 @@
 
 A simple but powerful tool for stream overlays when casting Overwatch matches!
 
-**WARNING:** This software is in alpha and is under heavy development. Things
-may break or change at any time, and without warning.
-
 Original version: <https://github.com/mpfleming36/OW_Scoreboard_Tool/>
 
 ---
@@ -139,7 +136,7 @@ Notes:
 -   If a map is not current, the map image will be desaturated (monochrome).
     This is currently only possible for the "Strips" style.
 
-> NOTE: We did not add winner details for the live map, as the map is no
-> longer live once it has been won.
+> NOTE: There are no winner details for the live map, as the map is no longer
+> live once it has been won.
 
 ---
