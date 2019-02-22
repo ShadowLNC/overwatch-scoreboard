@@ -3,6 +3,7 @@
     entries: entries
     orientation: 'vertical'
     BoxLayout:
+        size_hint_y: 0.05
         orientation: 'horizontal'
         Label:
             text: "Drag"
@@ -13,10 +14,12 @@
         Label:
             text: "Delete"
     BoxLayout:
+        size_hint_y: 0.9
         orientation: 'vertical'
         id: entries
         root: root
     Button:
+        size_hint_y: 0.05
         text: "Add Text Field"
         on_release: root.add_new()
 

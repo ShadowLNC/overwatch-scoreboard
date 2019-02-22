@@ -40,6 +40,7 @@
     mapstyle: mapstyle
     orientation: 'vertical'
     BoxLayout:
+        size_hint_y: 0.05
         orientation: 'horizontal'
         Label:
             text: "Drag"
@@ -58,11 +59,13 @@
         Label:
             text: "Delete"
     BoxLayout:
+        size_hint_y: 0.8
         orientation: 'vertical'
         id: mapset
         root: root
         # MapWidget goes here.
     BoxLayout:
+        size_hint_y: 0.15
         orientation: 'horizontal'
         BoxLayout:
             orientation: 'vertical'

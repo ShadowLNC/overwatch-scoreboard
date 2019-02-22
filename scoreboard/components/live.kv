@@ -7,11 +7,18 @@
 
     orientation: 'vertical'
     TextInput:
+        size_hint_y: 0.1
         id: title
         hint_text: "Broadcast Title"
         multiline: False
         on_text: root.callback_title(args[1])
     BoxLayout:
+        size_hint_y: 0.7
+        orientation: 'horizontal'
+        id: teamset
+        # LiveTeam objects here.
+    BoxLayout:
+        size_hint_y: 0.2
         orientation: 'horizontal'
         BoxLayout:
             orientation: 'vertical'
@@ -31,10 +38,6 @@
         Button:
             text: "Swap Teams"
             on_release: root.callback_swap()
-    BoxLayout:
-        orientation: 'horizontal'
-        id: teamset
-        # LiveTeam objects here.
 
 
 <LiveTeam>:
@@ -50,11 +53,14 @@
             pos: self.pos
             size: self.size
     Label:
+        size_hint_y: 0.1
         id: title
     Spinner:
+        size_hint_y: 0.1
         id: teamselect
         on_text: root.callback_teamselect(args[1])
     BoxLayout:
+        size_hint_y: 0.8
         orientation: 'vertical'
         id: players
         # LivePlayer objects here.

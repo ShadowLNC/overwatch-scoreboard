@@ -6,6 +6,7 @@
 
     BoxLayout:
         orientation: 'horizontal'
+        size_hint_y: 0.05
         Label:
             text: "Drag"
         Label:
@@ -22,11 +23,13 @@
             text: "Delete"
 
     BoxLayout:
+        size_hint_y: 0.9
         id: teamset
         orientation: 'vertical'
         # TeamWidget goes here.
 
     BoxLayout:
+        size_hint_y: 0.05
         orientation: 'horizontal'
         Button:
             on_release: root.addteam()
