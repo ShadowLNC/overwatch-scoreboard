@@ -51,52 +51,123 @@
       }
     }
 
+    @-webkit-keyframes slideease {
+      0% {
+        left: 1920px;
+      }
+      50% {
+        left: 20px;
+      }
+      100% {
+        left: 0px;
+      }
+    }
+
+    /*
+    out to the left
+      clip-path: polygon(0 0, 0 0, 0 100%, 0% 100%);
+    out to the right
+      clip-path: polygon(0 0, 100% 0%, 100% 100%, 0% 100%);
+    */
+
+    @keyframes stingerwipe {
+      0% {
+        clip-path: polygon(0 0, 100% 0%, 100% 100%, 0% 100%);
+      }
+
+      100% {
+        clip-path: polygon(0 0, 0 0, 0 100%, 0% 100%);
+      }
+    }
+
+    div.stingerlogo {
+      position: absolute;
+      top: 0px;
+      left: 0px;
+      width: 1920px;
+      height: 1080px;
+      vertical-align: middle;
+      background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.3), rgba(127, 127, 127, 0), rgba(0, 0, 0, 0.3));
+      animation: stingerwipe 0.5s;
+      animation-fill-mode: forwards;
+      animation-delay: 1.5s;
+
+    }
+
+    div.stingerlogo span.logo {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0px;
+      left: 0px;
+      background-position: center;
+      background-size: contain 80%;
+      background-repeat: no-repeat;
+      animation: slideease 2s;
+      animation-fill-mode: forwards;
+      animation-delay: 0s;
+      -webkit-animation-timing-function: cubic-bezier(0,0,0,1);
+    }
+
+    div.altcolor {
+      position: absolute;
+      top: 0px;
+      left: 0px;
+      width: 1920px;
+      height: 1080px;
+      vertical-align: middle;
+      background-color: white;
+      animation: stingerwipe 0.5s;
+      animation-fill-mode: forwards;
+      animation-delay: 1.55s;
+    }
+
     div.top {
       animation: topmove 1.34s;
       animation-fill-mode: backwards;
-      animation-delay: 0.66s;
+      animation-delay: 1.66s;
     }
 
     div.bottom {
       animation: bottommove 2s;
       animation-fill-mode: backwards;
-      animation-delay: 0.66s;
+      animation-delay: 1.66s;
     }
 
     div.hero1 {
       animation: leftmove 1.5s;
       animation-fill-mode: backwards;
-      animation-delay: 0.5s;
+      animation-delay: 1.5s;
     }
 
     div.hero2 {
       animation: leftmove 1.5s;
       animation-fill-mode: backwards;
-      animation-delay: 0.4s;
+      animation-delay: 1.4s;
     }
 
     div.hero3 {
       animation: leftmove 1.5s;
       animation-fill-mode: backwards;
-      animation-delay: 0.3s;
+      animation-delay: 1.3s;
     }
 
     div.hero4 {
       animation: leftmove 1.5s;
       animation-fill-mode: backwards;
-      animation-delay: 0.2s;
+      animation-delay: 1.2s;
     }
 
     div.hero5 {
       animation: leftmove 1.5s;
       animation-fill-mode: backwards;
-      animation-delay: 0.1s;
+      animation-delay: 1.1s;
     }
 
     div.hero6 {
       animation: leftmove 1.5s;
       animation-fill-mode: backwards;
-      animation-delay: 0s;
+      animation-delay: 1s;
     }
 
 
@@ -276,9 +347,11 @@
 
       $("#team2color").css("background-color", team1 == null ? "#27AAE1FF" : team2.teamcolor);
       $("#team2colorbottom").css("background-color", team1 == null ? "#27AAE1FF" : team2.teamcolor);
+      $("#team2colorstinger").css("background-color", team1 == null ? "#27AAE1FF" : team2.teamcolor);
 
       $("#team1logo").css("background-image", "url(\"../" + (team1 == null ? "" : team1.logo.replace("\\", "/").replace("\"", "\\\"")) + "\")");
       $("#team2logo").css("background-image", "url(\"../" + (team2 == null ? "" : team2.logo.replace("\\", "/").replace("\"", "\\\"")) + "\")");
+      $("#team2logobig").css("background-image", "url(\"../" + (team2 == null ? "" : team2.logo.replace("\\", "/").replace("\"", "\\\"")) + "\")");
 
       let current = null;
       // The current ID is a negative index due to the way Python manages it.
@@ -368,4 +441,8 @@
       <span id="team1player6battletag"></span>
     </div>
   </div>
+
+  <div class="altcolor"></div>
+  <div class="stingerlogo" id="team2colorstinger">
+  <span class="logo" id="team2logobig"></span></div>
 </body>
